@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/auth";
 import { canTransition } from "@/lib/fsm";
-import { parseKrToOre, VAT_RATE } from "@/lib/money";
+import { parseKrToOre } from "@/lib/money";
 import { nextInvoiceNumber } from "@/lib/numbers";
 import { prisma } from "@/lib/prisma";
 
@@ -37,24 +37,28 @@ export async function createInvoiceAction(formData: FormData) {
     }))
     .filter((line) => line.description);
 
-  if (lines.length === 0) {
-    const labor = Math.round(
-      sag.timeEntries.reduce((sum, entry) => sum + entry.hours * entry.hourlyRate, 0),
-    );
-    const materials = Math.round(
-      sag.materials.reduce((sum, material) => sum + material.quantity * material.unitPrice, 0),
-    );
-    if (labor > 0) {
-      lines.push({ description: "Arbejdsløn", quantity: 1, unitPrice: labor });
+    if (lines.length === 0) {
+      if (sag.estimatedRevenue > 0) {
+        lines.push({
+          description: `${sag.title} (${sag.caseNumber})`,
+          quantity: 1,
+          unitPrice: sag.estimatedRevenue,
+        });
+      } else {
+        const labor = Math.round(
+          sag.timeEntries.reduce((sum, entry) => sum + entry.hours * entry.hourlyRate, 0),
+        );
+        const materials = Math.round(
+          sag.materials.reduce((sum, material) => sum + material.quantity * material.unitPrice, 0),
+        );
+        if (labor > 0) {
+          lines.push({ description: "Arbejdsløn", quantity: 1, unitPrice: labor });
+        }
+        if (materials > 0) {
+          lines.push({ description: "Materialer", quantity: 1, unitPrice: materials });
+        }
+      }
     }
-    if (materials > 0) {
-      lines.push({ description: "Materialer", quantity: 1, unitPrice: materials });
-    }
-    if (lines.length === 0 && sag.estimatedRevenue > 0) {
-      const net = Math.round(sag.estimatedRevenue / (1 + VAT_RATE));
-      lines.push({ description: sag.title, quantity: 1, unitPrice: net });
-    }
-  }
 
   if (lines.length === 0) {
     throw new Error("Fakturaen skal have mindst én linje.");

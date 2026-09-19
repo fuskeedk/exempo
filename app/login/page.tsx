@@ -30,14 +30,14 @@ export default async function LoginPage({
             <p className="mt-4 rounded-xl bg-[#f3d7d4] px-3 py-2 text-sm text-[#7c2f2a]">{error}</p>
           ) : null}
           <div className="mt-6 space-y-4">
-            <div>
+            <label className="block">
               <Label>E-mail</Label>
               <Input name="email" type="email" defaultValue="pl@exempo.dk" required />
-            </div>
-            <div>
+            </label>
+            <label className="block">
               <Label>Adgangskode</Label>
               <Input name="password" type="password" defaultValue="exempo123" required />
-            </div>
+            </label>
             <SubmitButton>Fortsæt</SubmitButton>
           </div>
           <div className="mt-6 grid gap-2 text-sm text-muted">

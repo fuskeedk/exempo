@@ -88,8 +88,8 @@ export default async function CasesPage({
                   <td className="px-5 py-3">
                     <Link href={`/sager/${sag.id}`} className="font-medium hover:underline">
                       {sag.caseNumber}
+                      <span className="block text-muted font-normal">{sag.title}</span>
                     </Link>
-                    <p className="text-muted">{sag.title}</p>
                   </td>
                   <td className="px-5 py-3">
                     {sag.customerName}

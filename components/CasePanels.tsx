@@ -131,7 +131,7 @@ export function FsmForm({ sag }: { sag: CaseFull }) {
       <p className="mt-1 text-sm text-muted">Tilladte overgange fra {STATE_LABELS[sag.state]}.</p>
       <form action={transitionCaseAction} className="mt-4 space-y-3">
         <input type="hidden" name="caseId" value={sag.id} />
-        <Select name="toState" defaultValue={next[0]}>
+        <Select name="toState" defaultValue={next[0]} key={sag.state}>
           {next.map((state) => (
             <option key={state} value={state}>
               {STATE_LABELS[state as CaseState]}
@@ -175,7 +175,7 @@ export function CalendarAssignForm({
       <form action={assignCaseToCalendarAction} className="mt-4 grid gap-3">
         <input type="hidden" name="caseId" value={sag.id} />
         <Field label="Medarbejder">
-          <Select name="assignedToId" defaultValue={sag.assignedToId ?? ""} required>
+          <Select name="assignedToId" defaultValue={sag.assignedToId ?? ""} required key={sag.assignedToId ?? "none"}>
             <option value="">Vælg…</option>
             {employees.map((employee) => (
               <option key={employee.id} value={employee.id}>
@@ -190,6 +190,7 @@ export function CalendarAssignForm({
             <Input
               type="datetime-local"
               name="scheduledStart"
+              key={sag.scheduledStart?.toISOString() ?? "start"}
               defaultValue={sag.scheduledStart ? toDateTimeInput(sag.scheduledStart) : ""}
               required
             />
@@ -198,6 +199,7 @@ export function CalendarAssignForm({
             <Input
               type="datetime-local"
               name="scheduledEnd"
+              key={sag.scheduledEnd?.toISOString() ?? "end"}
               defaultValue={sag.scheduledEnd ? toDateTimeInput(sag.scheduledEnd) : ""}
               required
             />
@@ -213,11 +215,7 @@ export function DocumentsPanel({ sag }: { sag: CaseFull }) {
   return (
     <Card>
       <h2 className="font-serif text-xl">Dokumentation</h2>
-      <form
-        action={uploadDocumentAction}
-        encType="multipart/form-data"
-        className="mt-4 grid gap-3 sm:grid-cols-[1fr_180px_auto]"
-      >
+      <form action={uploadDocumentAction} className="mt-4 grid gap-3 sm:grid-cols-[1fr_180px_auto]">
         <input type="hidden" name="caseId" value={sag.id} />
         <Input type="file" name="file" required />
         <Select name="category" defaultValue="FOTO">
@@ -277,7 +275,13 @@ export function KlsPanel({
         </p>
         <form action={startKlsAction} className="mt-4 flex flex-wrap gap-3">
           <input type="hidden" name="caseId" value={sag.id} />
-          <Select name="templateId" className="max-w-md" defaultValue={templates[0]?.id}>
+          <Select
+            name="templateId"
+            className="max-w-md"
+            defaultValue={
+              templates.find((template) => template.trade === sag.trade)?.id ?? templates[0]?.id
+            }
+          >
             {templates.map((template) => (
               <option key={template.id} value={template.id}>
                 {template.name}

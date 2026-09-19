@@ -24,7 +24,7 @@ export default async function CalendarPage({
   const user = await requireSession();
   const { uge, medarbejder } = await searchParams;
   const office = canManageOffice(user.role);
-  const start = weekStart(uge ? new Date(uge) : new Date("2026-09-21"));
+  const start = weekStart(uge ? new Date(`${uge}T12:00:00`) : new Date());
   const days = weekDays(start);
   const end = addDays(start, 7);
 
@@ -48,7 +48,8 @@ export default async function CalendarPage({
   const unassigned = office
     ? await prisma.case.findMany({
         where: {
-          state: { in: ["NY", "BESIGTIGELSE"] },
+          state: { notIn: ["AFSLUTTET", "ANNULLERET"] },
+          OR: [{ assignedToId: null }, { scheduledStart: null }, { scheduledEnd: null }],
         },
         orderBy: { createdAt: "desc" },
       })

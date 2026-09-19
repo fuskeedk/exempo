@@ -44,9 +44,9 @@ export function Card({
 
 export function Label({ children }: { children: ReactNode }) {
   return (
-    <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted">
+    <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted">
       {children}
-    </label>
+    </span>
   );
 }
 
@@ -147,9 +147,9 @@ export function Field({
   children: ReactNode;
 }) {
   return (
-    <div>
+    <label className="block">
       <Label>{label}</Label>
       {children}
-    </div>
+    </label>
   );
 }

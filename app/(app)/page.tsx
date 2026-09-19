@@ -103,8 +103,8 @@ export default async function DashboardPage() {
                   <td className="py-3">
                     <Link href={`/sager/${sag.id}`} className="font-medium hover:underline">
                       {sag.caseNumber}
+                      <span className="block text-muted font-normal">{sag.title}</span>
                     </Link>
-                    <p className="text-muted">{sag.title}</p>
                   </td>
                   <td>{sag.customerName}</td>
                   <td>{isTrade(sag.trade) ? TRADE_LABELS[sag.trade] : sag.trade}</td>

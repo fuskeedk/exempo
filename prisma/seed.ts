@@ -184,7 +184,7 @@ async function main() {
     );
   }
 
-  const monday = startOfWeek(new Date("2026-09-21T08:00:00"), { weekStartsOn: 1 });
+  const monday = startOfWeek(new Date(), { weekStartsOn: 1 });
 
   const sag1 = await prisma.case.create({
     data: {
