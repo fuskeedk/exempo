@@ -4,6 +4,7 @@ import {
   cpSync,
   existsSync,
   mkdirSync,
+  readFileSync,
   readdirSync,
   rmSync,
   writeFileSync,
@@ -55,6 +56,26 @@ async function download(url, dest) {
   await pipeline(response.body, createWriteStream(dest));
 }
 
+function patchStandaloneServer(serverPath) {
+  let source = readFileSync(serverPath, "utf8");
+  const inject = `
+nextConfig.outputFileTracingRoot = dir
+nextConfig.repoRoot = dir
+nextConfig.distDirRoot = path.join(dir, '.next')
+if (nextConfig.turbopack) nextConfig.turbopack.root = dir
+`;
+  if (!source.includes("nextConfig.outputFileTracingRoot = dir")) {
+    if (!source.includes("process.env.__NEXT_PRIVATE_STANDALONE_CONFIG")) {
+      throw new Error("server.js har ikke det forventede Next-standalone format.");
+    }
+    source = source.replace(
+      "process.env.__NEXT_PRIVATE_STANDALONE_CONFIG = JSON.stringify(nextConfig)",
+      `${inject}\nprocess.env.__NEXT_PRIVATE_STANDALONE_CONFIG = JSON.stringify(nextConfig)`,
+    );
+    writeFileSync(serverPath, source);
+  }
+}
+
 function collectWindowsEngines(dir, found = []) {
   if (!existsSync(dir)) return found;
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
@@ -84,7 +105,7 @@ run("npx", ["prisma", "db", "push"]);
 run("npx", ["tsx", "prisma/seed.ts"]);
 
 console.log("→ Next.js standalone build");
-run("npx", ["next", "build"]);
+run("npx", ["next", "build", "--webpack"]);
 
 const standalone = join(root, ".next", "standalone");
 if (!existsSync(join(standalone, "server.js"))) {
@@ -97,6 +118,16 @@ cpSync(join(root, ".next", "static"), join(dist, ".next", "static"), { recursive
 if (existsSync(join(root, "public"))) {
   cpSync(join(root, "public"), join(dist, "public"), { recursive: true });
 }
+patchStandaloneServer(join(dist, "server.js"));
+writeFileSync(
+  join(dist, ".env"),
+  [
+    'DATABASE_URL="file:./data/exempo.db"',
+    'AUTH_SECRET="exempo-portable-secret-change-me-please-32b"',
+    'COOKIE_SECURE="0"',
+    "",
+  ].join("\n"),
+);
 
 const engineSources = [
   join(root, "node_modules", ".prisma", "client"),

@@ -38,7 +38,8 @@ func main() {
 	}
 
 	port := getenv("PORT", "3000")
-	_ = os.Setenv("DATABASE_URL", "file:./data/exempo.db")
+	dbURL := "file:" + filepath.ToSlash(dbPath)
+	_ = os.Setenv("DATABASE_URL", dbURL)
 	_ = os.Setenv("AUTH_SECRET", secret)
 	_ = os.Setenv("PORT", port)
 	_ = os.Setenv("HOSTNAME", "127.0.0.1")
@@ -50,10 +51,20 @@ func main() {
 		fail("node.exe mangler i mappen. Pak filerne ud igen.", err)
 	}
 
+	logFile, logErr := os.Create(filepath.Join(dataDir, "exempo.log"))
+	if logErr != nil {
+		logFile = nil
+	}
+
 	cmd := exec.Command(node, "server.js")
 	cmd.Dir = root
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	if logFile != nil {
+		cmd.Stdout = io.MultiWriter(os.Stdout, logFile)
+		cmd.Stderr = io.MultiWriter(os.Stderr, logFile)
+	} else {
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+	}
 	cmd.Env = os.Environ()
 	if err := cmd.Start(); err != nil {
 		fail("Kunne ikke starte Exempo.", err)
