@@ -1,0 +1,183 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         String   @default("MEDARBEJDER")
+  trade        String   @default("ANDET")
+  phone        String   @default("")
+  hourlyRate   Int      @default(45000)
+  active       Boolean  @default(true)
+  color        String   @default("#2d6a52")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  assignedCases Case[]       @relation("AssignedTo")
+  ledCases      Case[]       @relation("ProjectLeader")
+  documents     Document[]
+  timeEntries   TimeEntry[]
+  caseEvents    CaseEvent[]
+  klsReports    KlsReport[]
+  invoices      Invoice[]
+}
+
+model Case {
+  id               String    @id @default(cuid())
+  caseNumber       String    @unique
+  title            String
+  description      String    @default("")
+  customerName     String
+  customerAddress  String
+  customerPostal   String    @default("")
+  customerCity     String    @default("")
+  customerPhone    String    @default("")
+  customerEmail    String    @default("")
+  insuranceCompany String    @default("")
+  claimNumber      String    @default("")
+  state            String    @default("NY")
+  trade            String    @default("ANDET")
+  assignedToId     String?
+  assignedTo       User?     @relation("AssignedTo", fields: [assignedToId], references: [id])
+  projectLeaderId  String?
+  projectLeader    User?     @relation("ProjectLeader", fields: [projectLeaderId], references: [id])
+  scheduledStart   DateTime?
+  scheduledEnd     DateTime?
+  estimatedRevenue Int       @default(0)
+  estimatedCost    Int       @default(0)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  events      CaseEvent[]
+  documents   Document[]
+  timeEntries TimeEntry[]
+  materials   Material[]
+  klsReports  KlsReport[]
+  invoices    Invoice[]
+
+  @@index([state])
+  @@index([assignedToId])
+  @@index([scheduledStart])
+}
+
+model CaseEvent {
+  id        String   @id @default(cuid())
+  caseId    String
+  case      Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  fromState String?
+  toState   String
+  note      String   @default("")
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model Document {
+  id           String   @id @default(cuid())
+  caseId       String
+  case         Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  filename     String
+  originalName String
+  mimeType     String
+  size         Int
+  category     String   @default("ANDET")
+  uploadedById String?
+  uploadedBy   User?    @relation(fields: [uploadedById], references: [id])
+  createdAt    DateTime @default(now())
+}
+
+model TimeEntry {
+  id         String   @id @default(cuid())
+  caseId     String
+  case       Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  hours      Float
+  hourlyRate Int
+  date       DateTime
+  note       String   @default("")
+  createdAt  DateTime @default(now())
+}
+
+model Material {
+  id        String   @id @default(cuid())
+  caseId    String
+  case      Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  name      String
+  quantity  Float    @default(1)
+  unitPrice Int
+  createdAt DateTime @default(now())
+}
+
+model KlsTemplate {
+  id      String      @id @default(cuid())
+  name    String
+  trade   String
+  items   KlsItem[]
+  reports KlsReport[]
+}
+
+model KlsItem {
+  id         String      @id @default(cuid())
+  templateId String
+  template   KlsTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  label      String
+  sortOrder  Int         @default(0)
+  checks     KlsCheck[]
+}
+
+model KlsReport {
+  id         String      @id @default(cuid())
+  caseId     String
+  case       Case        @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  templateId String
+  template   KlsTemplate @relation(fields: [templateId], references: [id])
+  signedById String?
+  signedBy   User?       @relation(fields: [signedById], references: [id])
+  signedAt   DateTime?
+  notes      String      @default("")
+  createdAt  DateTime    @default(now())
+  checks     KlsCheck[]
+}
+
+model KlsCheck {
+  id       String    @id @default(cuid())
+  reportId String
+  report   KlsReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  itemId   String
+  item     KlsItem   @relation(fields: [itemId], references: [id])
+  status   String    @default("PENDING")
+  comment  String    @default("")
+}
+
+model Invoice {
+  id            String        @id @default(cuid())
+  invoiceNumber String        @unique
+  caseId        String
+  case          Case          @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  createdById   String?
+  createdBy     User?         @relation(fields: [createdById], references: [id])
+  status        String        @default("KLADDE")
+  notes         String        @default("")
+  issuedAt      DateTime      @default(now())
+  dueAt         DateTime?
+  paidAt        DateTime?
+  lines         InvoiceLine[]
+}
+
+model InvoiceLine {
+  id          String  @id @default(cuid())
+  invoiceId   String
+  invoice     Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  description String
+  quantity    Float   @default(1)
+  unitPrice   Int
+}

@@ -1,0 +1,99 @@
+@import "tailwindcss";
+
+:root {
+  --paper: #f3eee4;
+  --paper-2: #fffaf2;
+  --ink: #1b1814;
+  --muted: #6d675c;
+  --line: #e0d4c2;
+  --pine: #16382c;
+  --pine-2: #215744;
+  --moss: #d7e2d3;
+  --rust: #b85c38;
+  --rust-2: #9a4a2c;
+  --gold: #c4a35a;
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-paper-2: var(--paper-2);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-pine: var(--pine);
+  --color-pine-2: var(--pine-2);
+  --color-moss: var(--moss);
+  --color-rust: var(--rust);
+  --color-gold: var(--gold);
+  --font-sans: var(--font-outfit);
+  --font-serif: var(--font-fraunces);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+body {
+  font-family: var(--font-outfit), "Segoe UI", sans-serif;
+}
+
+a {
+  color: inherit;
+}
+
+.ledger-rule {
+  background-image: linear-gradient(to bottom, transparent 31px, #eadfce 32px);
+  background-size: 100% 32px;
+}
+
+.tone-stone {
+  background: #ece7dc;
+  color: #4d473c;
+}
+.tone-sky {
+  background: #d7e7f2;
+  color: #24526d;
+}
+.tone-indigo {
+  background: #ddd7f0;
+  color: #3c2f72;
+}
+.tone-amber {
+  background: #f6e3c0;
+  color: #7a4e12;
+}
+.tone-violet {
+  background: #eadcf3;
+  color: #5c2d73;
+}
+.tone-teal {
+  background: #d3ece7;
+  color: #1b5c52;
+}
+.tone-green {
+  background: #d8ead4;
+  color: #21533a;
+}
+.tone-olive {
+  background: #e4e6c9;
+  color: #4d5320;
+}
+.tone-rose {
+  background: #f3d7d4;
+  color: #7c2f2a;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: white;
+  }
+}
