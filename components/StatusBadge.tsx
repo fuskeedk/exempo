@@ -4,6 +4,8 @@ const invoiceTone: Record<string, string> = {
   KLADDE: "tone-stone",
   SENDT: "tone-sky",
   BETALT: "tone-green",
+  RYKKET: "tone-amber",
+  INKASSO: "tone-rose",
 };
 
 export function StatusBadge({ state }: { state: string }) {
@@ -16,10 +18,23 @@ export function StatusBadge({ state }: { state: string }) {
   );
 }
 
-export function InvoiceBadge({ status }: { status: string }) {
+export function InvoiceBadge({ status, kind }: { status: string; kind?: string }) {
+  const statusLabel =
+    status === "KLADDE"
+      ? "Kladde"
+      : status === "SENDT"
+        ? "Sendt"
+        : status === "BETALT"
+          ? "Betalt"
+          : status === "RYKKET"
+            ? "Rykket"
+            : status === "INKASSO"
+              ? "Inkasso"
+              : status;
+  const label = kind === "KREDITNOTA" ? `Kreditnota · ${statusLabel}` : statusLabel;
   return (
     <span className={`${invoiceTone[status] ?? "tone-stone"} inline-flex rounded-full px-2.5 py-1 text-xs font-semibold`}>
-      {status === "KLADDE" ? "Kladde" : status === "SENDT" ? "Sendt" : status === "BETALT" ? "Betalt" : status}
+      {label}
     </span>
   );
 }

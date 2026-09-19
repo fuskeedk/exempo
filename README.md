@@ -1,6 +1,6 @@
-# Exempo — sagshåndtering
+# Exempo — ordrestyring
 
-FSM-baseret sagshåndtering til skadesager: oprettelse, medarbejderkalender, dokumentation, KLS, faktura og dækningsgrad.
+Ordrestyring til håndværk i samme spor som Minuba: tilbud, arbejdssedler, planlægning, tid, materialer, KLS, faktura og dækningsgrad.
 
 ## Kør lokalt
 
@@ -18,14 +18,18 @@ npm run dev
 | --- | --- | --- |
 | Projektleder | pl@exempo.dk | exempo123 |
 | Administrator | admin@exempo.dk | exempo123 |
-| Tømrer | lars@exempo.dk | exempo123 |
+| Tømrer (marken) | lars@exempo.dk | exempo123 |
 
-## Hvad systemet dækker
+## Moduler
 
-- **Sager** med finite state machine: Ny → Besigtigelse → Planlagt → I gang → KLS → Klar til faktura → Faktureret → Afsluttet
-- **Medarbejdere** med rolle, fag og timepris
-- **Kalender** pr. medarbejder, så projektlederen kan lægge sager på
-- **Dokumentation** (foto, tilbud, forsikring, KLS, faktura)
-- **KLS-tjeklister** med underskrift som krav før faktura
-- **Faktura** med 25 % moms og status kladde/sendt/betalt
-- **Dækningsgrad** pr. sag, pr. medarbejder og samlet
+- **Overblik** — pipeline som i Minubas sagsflow
+- **Min dag** — montørens app: stopur, materialer, stregkode, foto, ekstraarbejde, fravær
+- **Tilbud** — forbrug, fast pris eller kalkulation; godkendt tilbud bliver arbejdsseddel
+- **Arbejdssedler** — FSM fra ny sag til faktura, KLS og dokumentation
+- **Planlægning** — medarbejderkalender, fravær og ressourcer (bil, lift)
+- **Kunder** — kartotek med flere adresser
+- **Varer** — eget katalog med varenr., stregkode og lager
+- **Tid** — timer, overtid og fravær
+- **Fakturaer + rykkere** — 25 % moms, kreditnota, rykker 1–3 og inkasso
+- **Serviceaftaler** — faste, tilbagevendende ordrer
+- **Dækningsgrad** — pr. sag, medarbejder og samlet (kostpris på materialer)

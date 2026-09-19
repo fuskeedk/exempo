@@ -2,7 +2,7 @@ export type EconomicsInput = {
   estimatedRevenue: number;
   invoices: { status: string; lines: { quantity: number; unitPrice: number }[] }[];
   timeEntries: { hours: number; hourlyRate: number }[];
-  materials: { quantity: number; unitPrice: number }[];
+  materials: { quantity: number; unitPrice: number; costPrice?: number }[];
 };
 
 export type CaseEconomics = {
@@ -22,9 +22,17 @@ export function invoiceNet(
   return Math.round(lines.reduce((sum, line) => sum + line.quantity * line.unitPrice, 0));
 }
 
+export function quoteEconomics(
+  lines: { quantity: number; unitPrice: number; costPrice: number }[],
+): { sale: number; cost: number; coverage: number | null } {
+  const sale = Math.round(lines.reduce((sum, line) => sum + line.quantity * line.unitPrice, 0));
+  const cost = Math.round(lines.reduce((sum, line) => sum + line.quantity * line.costPrice, 0));
+  return { sale, cost, coverage: sale === 0 ? null : (sale - cost) / sale };
+}
+
 export function caseEconomics(input: EconomicsInput): CaseEconomics {
   const billed = input.invoices
-    .filter((invoice) => invoice.status === "SENDT" || invoice.status === "BETALT")
+    .filter((invoice) => invoice.status === "SENDT" || invoice.status === "BETALT" || invoice.status === "RYKKET" || invoice.status === "INKASSO")
     .reduce((sum, invoice) => sum + invoiceNet(invoice.lines), 0);
 
   const usingEstimate = billed === 0;
@@ -33,7 +41,11 @@ export function caseEconomics(input: EconomicsInput): CaseEconomics {
     input.timeEntries.reduce((sum, entry) => sum + entry.hours * entry.hourlyRate, 0),
   );
   const materialCost = Math.round(
-    input.materials.reduce((sum, material) => sum + material.quantity * material.unitPrice, 0),
+    input.materials.reduce((sum, material) => {
+      const unitCost =
+        material.costPrice && material.costPrice > 0 ? material.costPrice : material.unitPrice;
+      return sum + material.quantity * unitCost;
+    }, 0),
   );
   const cost = laborCost + materialCost;
   const contribution = revenue - cost;

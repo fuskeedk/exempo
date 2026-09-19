@@ -14,8 +14,8 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "Exempo — Sagshåndtering",
-  description: "FSM-baseret sagshåndtering med kalender, KLS, faktura og dækningsgrad.",
+  title: "Exempo — Ordrestyring",
+  description: "Ordrestyring til håndværk: tilbud, arbejdssedler, planlægning, KLS, faktura og dækningsgrad.",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

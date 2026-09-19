@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { setInvoiceStatusAction } from "@/app/actions/invoices";
+import { createCreditNoteAction, setInvoiceStatusAction } from "@/app/actions/invoices";
+import { PrintButton } from "@/components/PrintButton";
 import { InvoiceBadge } from "@/components/StatusBadge";
 import { Card, PageHeader } from "@/components/ui";
 import { requireRole } from "@/lib/auth";
@@ -33,9 +34,12 @@ export default async function InvoiceDetailPage({
         title={invoice.invoiceNumber}
         description={invoice.case.title}
         actions={
-          <Link href={`/sager/${invoice.caseId}`} className="rounded-full border border-line bg-white px-4 py-2.5 text-sm font-semibold">
-            Åbn sag
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <PrintButton>Udskriv</PrintButton>
+            <Link href={`/sager/${invoice.caseId}`} className="rounded-full border border-line bg-white px-4 py-2.5 text-sm font-semibold">
+              Åbn sag
+            </Link>
+          </div>
         }
       />
       <Card className="mx-auto max-w-3xl">
@@ -44,7 +48,7 @@ export default async function InvoiceDetailPage({
             <p className="font-serif text-3xl">Exempo</p>
             <p className="text-sm text-muted">Sagshåndtering · CVR demo</p>
           </div>
-          <InvoiceBadge status={invoice.status} />
+          <InvoiceBadge status={invoice.status} kind={invoice.kind} />
         </div>
         <div className="mt-8 grid gap-6 sm:grid-cols-2 text-sm">
           <div>
@@ -109,7 +113,7 @@ export default async function InvoiceDetailPage({
               Markér som sendt
             </button>
           ) : null}
-          {invoice.status === "SENDT" ? (
+          {["SENDT", "RYKKET", "INKASSO"].includes(invoice.status) ? (
             <button name="status" value="BETALT" className="rounded-full bg-pine px-4 py-2.5 text-sm font-semibold text-white">
               Markér som betalt
             </button>
@@ -120,6 +124,14 @@ export default async function InvoiceDetailPage({
             </button>
           ) : null}
         </form>
+        {invoice.kind !== "KREDITNOTA" && ["SENDT", "BETALT", "RYKKET", "INKASSO"].includes(invoice.status) ? (
+          <form action={createCreditNoteAction} className="no-print mt-3">
+            <input type="hidden" name="invoiceId" value={invoice.id} />
+            <button type="submit" className="rounded-full border border-line px-4 py-2.5 text-sm font-semibold">
+              Dan kreditnota
+            </button>
+          </form>
+        ) : null}
       </Card>
     </>
   );

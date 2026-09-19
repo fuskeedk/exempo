@@ -8,26 +8,115 @@ datasource db {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  name         String
-  email        String   @unique
-  passwordHash String
-  role         String   @default("MEDARBEJDER")
-  trade        String   @default("ANDET")
-  phone        String   @default("")
-  hourlyRate   Int      @default(45000)
-  active       Boolean  @default(true)
-  color        String   @default("#2d6a52")
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id              String    @id @default(cuid())
+  name            String
+  email           String    @unique
+  passwordHash    String
+  role            String    @default("MEDARBEJDER")
+  trade           String    @default("ANDET")
+  phone           String    @default("")
+  hourlyRate      Int       @default(45000)
+  active          Boolean   @default(true)
+  color           String    @default("#2d6a52")
+  timerCaseId     String?
+  timerStartedAt  DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
-  assignedCases Case[]       @relation("AssignedTo")
-  ledCases      Case[]       @relation("ProjectLeader")
+  assignedCases Case[]         @relation("AssignedTo")
+  ledCases      Case[]         @relation("ProjectLeader")
   documents     Document[]
   timeEntries   TimeEntry[]
   caseEvents    CaseEvent[]
   klsReports    KlsReport[]
   invoices      Invoice[]
+  absences      Absence[]
+  quotes        Quote[]
+  extraWorks    ExtraWork[]
+}
+
+model Customer {
+  id        String    @id @default(cuid())
+  name      String
+  type      String    @default("PRIVAT")
+  cvr       String    @default("")
+  email     String    @default("")
+  phone     String    @default("")
+  notes     String    @default("")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  addresses  Address[]
+  cases      Case[]
+  quotes     Quote[]
+  invoices   Invoice[]
+  agreements ServiceAgreement[]
+}
+
+model Address {
+  id         String   @id @default(cuid())
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  label      String   @default("Adresse")
+  street     String
+  postal     String   @default("")
+  city       String   @default("")
+  notes      String   @default("")
+  cases      Case[]
+  quotes     Quote[]
+}
+
+model Product {
+  id        String     @id @default(cuid())
+  sku       String     @unique
+  barcode   String     @default("")
+  name      String
+  unit      String     @default("stk")
+  group     String     @default("EGNE")
+  costPrice Int        @default(0)
+  salePrice Int        @default(0)
+  vat       Int        @default(25)
+  stock     Int        @default(0)
+  billable  Boolean    @default(true)
+  active    Boolean    @default(true)
+  materials Material[]
+  quoteLines QuoteLine[]
+}
+
+model Quote {
+  id          String      @id @default(cuid())
+  quoteNumber String      @unique
+  customerId  String
+  customer    Customer    @relation(fields: [customerId], references: [id])
+  addressId   String?
+  address     Address?    @relation(fields: [addressId], references: [id])
+  title       String
+  description String      @default("")
+  trade       String      @default("ANDET")
+  pricingMode String      @default("FAST_PRIS")
+  status      String      @default("KLADDE")
+  validUntil  DateTime?
+  createdById String?
+  createdBy   User?       @relation(fields: [createdById], references: [id])
+  caseId      String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  lines       QuoteLine[]
+  cases       Case[]
+}
+
+model QuoteLine {
+  id          String   @id @default(cuid())
+  quoteId     String
+  quote       Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  productId   String?
+  product     Product? @relation(fields: [productId], references: [id])
+  kind        String   @default("YDELSE")
+  description String
+  quantity    Float    @default(1)
+  unit        String   @default("stk")
+  unitPrice   Int      @default(0)
+  costPrice   Int      @default(0)
 }
 
 model Case {
@@ -35,6 +124,12 @@ model Case {
   caseNumber       String    @unique
   title            String
   description      String    @default("")
+  customerId       String?
+  customer         Customer? @relation(fields: [customerId], references: [id])
+  addressId        String?
+  address          Address?  @relation(fields: [addressId], references: [id])
+  quoteId          String?
+  quote            Quote?    @relation(fields: [quoteId], references: [id])
   customerName     String
   customerAddress  String
   customerPostal   String    @default("")
@@ -43,6 +138,10 @@ model Case {
   customerEmail    String    @default("")
   insuranceCompany String    @default("")
   claimNumber      String    @default("")
+  requisition      String    @default("")
+  referencePerson  String    @default("")
+  orderType        String    @default("SKADE")
+  pricingMode      String    @default("FAST_PRIS")
   state            String    @default("NY")
   trade            String    @default("ANDET")
   assignedToId     String?
@@ -62,6 +161,7 @@ model Case {
   materials   Material[]
   klsReports  KlsReport[]
   invoices    Invoice[]
+  extraWorks  ExtraWork[]
 
   @@index([state])
   @@index([assignedToId])
@@ -103,18 +203,49 @@ model TimeEntry {
   hours      Float
   hourlyRate Int
   date       DateTime
+  kind       String   @default("ARBEJDE")
+  billable   Boolean  @default(true)
   note       String   @default("")
   createdAt  DateTime @default(now())
+}
+
+model Absence {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime
+  hours     Float    @default(7.4)
+  type      String   @default("FERIE")
+  note      String   @default("")
+  createdAt DateTime @default(now())
 }
 
 model Material {
   id        String   @id @default(cuid())
   caseId    String
   case      Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id])
   name      String
+  sku       String   @default("")
   quantity  Float    @default(1)
   unitPrice Int
+  costPrice Int      @default(0)
+  billable  Boolean  @default(true)
   createdAt DateTime @default(now())
+}
+
+model ExtraWork {
+  id          String   @id @default(cuid())
+  caseId      String
+  case        Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  title       String
+  description String   @default("")
+  amount      Int      @default(0)
+  status      String   @default("KLADDE")
+  createdById String?
+  createdBy   User?    @relation(fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
 }
 
 model KlsTemplate {
@@ -163,14 +294,19 @@ model Invoice {
   invoiceNumber String        @unique
   caseId        String
   case          Case          @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  customerId    String?
+  customer      Customer?     @relation(fields: [customerId], references: [id])
   createdById   String?
   createdBy     User?         @relation(fields: [createdById], references: [id])
   status        String        @default("KLADDE")
+  kind          String        @default("FAKTURA")
+  reminderLevel Int           @default(0)
   notes         String        @default("")
   issuedAt      DateTime      @default(now())
   dueAt         DateTime?
   paidAt        DateTime?
   lines         InvoiceLine[]
+  reminders     Reminder[]
 }
 
 model InvoiceLine {
@@ -180,4 +316,46 @@ model InvoiceLine {
   description String
   quantity    Float   @default(1)
   unitPrice   Int
+}
+
+model Reminder {
+  id        String   @id @default(cuid())
+  invoiceId String
+  invoice   Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  level     Int
+  note      String   @default("")
+  createdAt DateTime @default(now())
+}
+
+model ServiceAgreement {
+  id               String    @id @default(cuid())
+  customerId       String
+  customer         Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  title            String
+  description      String    @default("")
+  trade            String    @default("ANDET")
+  intervalMonths   Int       @default(12)
+  nextVisit        DateTime
+  estimatedRevenue Int       @default(0)
+  active           Boolean   @default(true)
+  createdAt        DateTime  @default(now())
+}
+
+model Resource {
+  id        String            @id @default(cuid())
+  name      String
+  type      String            @default("UDSTYR")
+  dailyRate Int               @default(0)
+  color     String            @default("#8a6d3b")
+  bookings  ResourceBooking[]
+}
+
+model ResourceBooking {
+  id         String   @id @default(cuid())
+  resourceId String
+  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  caseId     String   @default("")
+  start      DateTime
+  end        DateTime
+  note       String   @default("")
 }

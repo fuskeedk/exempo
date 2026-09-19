@@ -5,9 +5,11 @@ import {
   transitionCaseAction,
   updateCaseAction,
 } from "@/app/actions/cases";
+import { addCatalogMaterialAction } from "@/app/actions/products";
 import { uploadDocumentAction } from "@/app/actions/documents";
 import { createInvoiceAction } from "@/app/actions/invoices";
 import { saveKlsAction, startKlsAction } from "@/app/actions/kls";
+import { createExtraWorkAction, setExtraWorkStatusAction } from "@/app/actions/field";
 import { CoverageBadge, InvoiceBadge, PipelineDots, StatusBadge } from "@/components/StatusBadge";
 import { SubmitButton } from "@/components/SubmitButton";
 import { Card, Field, Input, Select, Textarea } from "@/components/ui";
@@ -16,8 +18,13 @@ import { canManageOffice } from "@/lib/auth";
 import {
   DOCUMENT_CATEGORIES,
   DOCUMENT_LABELS,
+  EXTRA_STATUS_LABELS,
   KLS_STATUS_LABELS,
   KLS_STATUSES,
+  TIME_KIND_LABELS,
+  TIME_KINDS,
+  ORDER_TYPE_LABELS,
+  PRICING_MODE_LABELS,
   TRADE_LABELS,
   TRADES,
   isTrade,
@@ -43,6 +50,7 @@ type CaseFull = Prisma.CaseGetPayload<{
     timeEntries: { include: { user: true } };
     materials: true;
     invoices: { include: { lines: true } };
+    extraWorks: true;
     klsReports: {
       include: {
         template: true;
@@ -55,6 +63,7 @@ type CaseFull = Prisma.CaseGetPayload<{
 
 type Template = Prisma.KlsTemplateGetPayload<{ include: { items: true } }>;
 type Employee = { id: string; name: string; trade: string; role: string };
+type CatalogProduct = { id: string; sku: string; name: string; unit: string };
 
 export function CaseHero({
   sag,
@@ -70,6 +79,12 @@ export function CaseHero({
           <p className="text-xs uppercase tracking-[0.18em] text-muted">{sag.caseNumber}</p>
           <h1 className="mt-1 font-serif text-3xl">{sag.title}</h1>
           <p className="mt-2 max-w-2xl text-muted">{sag.description || "Ingen beskrivelse."}</p>
+          <p className="mt-2 text-sm text-muted">
+            {ORDER_TYPE_LABELS[sag.orderType as keyof typeof ORDER_TYPE_LABELS] ?? sag.orderType}
+            {" · "}
+            {PRICING_MODE_LABELS[sag.pricingMode as keyof typeof PRICING_MODE_LABELS] ?? sag.pricingMode}
+            {sag.requisition ? ` · Rek. ${sag.requisition}` : ""}
+          </p>
         </div>
         <StatusBadge state={sag.state} />
       </div>
@@ -359,10 +374,12 @@ export function EconomyPanel({
   sag,
   economics,
   user,
+  products,
 }: {
   sag: CaseFull;
   economics: CaseEconomics;
   user: SessionUser;
+  products: CatalogProduct[];
 }) {
   return (
     <div className="grid gap-6 lg:grid-cols-2">
@@ -387,21 +404,43 @@ export function EconomyPanel({
       </Card>
       <Card>
         <h2 className="font-serif text-xl">Tid og materialer</h2>
-        <form action={addTimeEntryAction} className="mt-4 grid gap-3 sm:grid-cols-3">
+        <form action={addTimeEntryAction} className="mt-4 grid gap-3 sm:grid-cols-4">
           <input type="hidden" name="caseId" value={sag.id} />
           <Input name="hours" placeholder="Timer" required />
           <Input type="date" name="date" defaultValue={toDateInput(new Date())} required />
+          <Select name="kind" defaultValue="ARBEJDE">
+            {TIME_KINDS.map((kind) => (
+              <option key={kind} value={kind}>
+                {TIME_KIND_LABELS[kind]}
+              </option>
+            ))}
+          </Select>
           <Input name="note" placeholder="Note" />
-          <div className="sm:col-span-3">
+          <div className="sm:col-span-4">
             <SubmitButton>Registrér tid</SubmitButton>
           </div>
         </form>
-        <form action={addMaterialAction} className="mt-4 grid gap-3 sm:grid-cols-3">
+        {products.length > 0 ? (
+          <form action={addCatalogMaterialAction} className="mt-4 grid gap-3 sm:grid-cols-[1fr_100px_auto]">
+            <input type="hidden" name="caseId" value={sag.id} />
+            <Select name="productId" required>
+              {products.map((product) => (
+                <option key={product.id} value={product.id}>
+                  {product.sku} · {product.name}
+                </option>
+              ))}
+            </Select>
+            <Input name="quantity" defaultValue="1" />
+            <SubmitButton variant="secondary">Fra katalog</SubmitButton>
+          </form>
+        ) : null}
+        <form action={addMaterialAction} className="mt-4 grid gap-3 sm:grid-cols-4">
           <input type="hidden" name="caseId" value={sag.id} />
           <Input name="name" placeholder="Materiale" required />
           <Input name="quantity" placeholder="Antal" defaultValue="1" />
-          <Input name="unitPrice" placeholder="Pris pr. stk., kr." required />
-          <div className="sm:col-span-3">
+          <Input name="unitPrice" placeholder="Salgspris kr." required />
+          <Input name="costPrice" placeholder="Kostpris kr." />
+          <div className="sm:col-span-4">
             <SubmitButton variant="secondary">Tilføj materiale</SubmitButton>
           </div>
         </form>
@@ -436,11 +475,46 @@ export function EconomyPanel({
                 <a className="hover:underline" href={`/fakturaer/${invoice.id}`}>
                   {invoice.invoiceNumber}
                 </a>
-                <InvoiceBadge status={invoice.status} />
+                <InvoiceBadge status={invoice.status} kind={invoice.kind} />
               </li>
             ))}
           </ul>
         ) : null}
+      </Card>
+      <Card className="lg:col-span-2">
+        <h2 className="font-serif text-xl">Ekstraarbejde</h2>
+        <form action={createExtraWorkAction} className="mt-4 grid gap-3 sm:grid-cols-3">
+          <input type="hidden" name="caseId" value={sag.id} />
+          <Input name="title" placeholder="Opgave" required />
+          <Input name="amount" placeholder="Beløb, kr." />
+          <SubmitButton variant="secondary">Opret ekstraarbejde</SubmitButton>
+        </form>
+        <ul className="mt-4 space-y-2 text-sm">
+          {sag.extraWorks.map((extra) => (
+            <li key={extra.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-line px-3 py-2">
+              <span>
+                {extra.title} · {formatKr(extra.amount)} ·{" "}
+                {EXTRA_STATUS_LABELS[extra.status as keyof typeof EXTRA_STATUS_LABELS] ?? extra.status}
+              </span>
+              {extra.status === "KLADDE" || extra.status === "SENDT" ? (
+                <form action={setExtraWorkStatusAction} className="flex gap-2">
+                  <input type="hidden" name="extraWorkId" value={extra.id} />
+                  {extra.status === "KLADDE" ? (
+                    <button name="status" value="SENDT" className="text-sm font-semibold text-pine-2">
+                      Send til kunden
+                    </button>
+                  ) : null}
+                  <button name="status" value="GODKENDT" className="text-sm font-semibold text-pine-2">
+                    Godkend
+                  </button>
+                  <button name="status" value="AFVIST" className="text-sm text-muted">
+                    Afvis
+                  </button>
+                </form>
+              ) : null}
+            </li>
+          ))}
+        </ul>
       </Card>
     </div>
   );

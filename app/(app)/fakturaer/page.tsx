@@ -53,7 +53,7 @@ export default async function InvoicesPage() {
                   <td className="px-5 py-3">{formatKr(net)}</td>
                   <td className="px-5 py-3">{formatKr(Math.round(net * (1 + VAT_RATE)))}</td>
                   <td className="px-5 py-3">
-                    <InvoiceBadge status={invoice.status} />
+                    <InvoiceBadge status={invoice.status} kind={invoice.kind} />
                   </td>
                 </tr>
               );

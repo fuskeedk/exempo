@@ -4,12 +4,19 @@ import type { SessionUser } from "@/lib/auth";
 import { ROLE_LABELS } from "@/lib/catalog";
 
 const links = [
-  { href: "/", label: "Tavle" },
-  { href: "/sager", label: "Sager" },
-  { href: "/kalender", label: "Kalender" },
-  { href: "/medarbejdere", label: "Medarbejdere" },
+  { href: "/min-dag", label: "Min dag" },
+  { href: "/", label: "Overblik" },
+  { href: "/sager", label: "Arbejdssedler" },
+  { href: "/tilbud", label: "Tilbud" },
+  { href: "/kalender", label: "Planlægning" },
+  { href: "/kunder", label: "Kunder" },
+  { href: "/varer", label: "Varer" },
+  { href: "/tid", label: "Tid" },
   { href: "/fakturaer", label: "Fakturaer" },
+  { href: "/rykkere", label: "Rykkere" },
+  { href: "/serviceaftaler", label: "Serviceaftaler" },
   { href: "/okonomi", label: "Dækningsgrad" },
+  { href: "/medarbejdere", label: "Medarbejdere" },
 ];
 
 export function AppShell({
@@ -26,7 +33,7 @@ export function AppShell({
           <Link href="/" className="block">
             <p className="font-serif text-3xl tracking-tight">Exempo</p>
             <p className="mt-1 text-xs uppercase tracking-[0.22em] text-[#d7c9a8]">
-              Sagshåndtering
+              Ordrestyring
             </p>
           </Link>
         </div>

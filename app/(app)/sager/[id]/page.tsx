@@ -31,6 +31,7 @@ export default async function CaseDetailPage({
       timeEntries: { include: { user: true }, orderBy: { date: "desc" } },
       materials: { orderBy: { createdAt: "desc" } },
       invoices: { include: { lines: true }, orderBy: { issuedAt: "desc" } },
+      extraWorks: { orderBy: { createdAt: "desc" } },
       klsReports: {
         include: {
           template: true,
@@ -44,13 +45,17 @@ export default async function CaseDetailPage({
   if (!sag) notFound();
   if (!canManageOffice(user.role) && sag.assignedToId !== user.id) notFound();
 
-  const [employees, templates] = await Promise.all([
+  const [employees, templates, products] = await Promise.all([
     prisma.user.findMany({
       where: { active: true, role: { in: ["MEDARBEJDER", "PL"] } },
       orderBy: { name: "asc" },
     }),
     prisma.klsTemplate.findMany({
       include: { items: { orderBy: { sortOrder: "asc" } } },
+      orderBy: { name: "asc" },
+    }),
+    prisma.product.findMany({
+      where: { active: true },
       orderBy: { name: "asc" },
     }),
   ]);
@@ -66,7 +71,7 @@ export default async function CaseDetailPage({
       </div>
       <DocumentsPanel sag={sag} />
       <KlsPanel sag={sag} templates={templates} />
-      <EconomyPanel sag={sag} economics={economics} user={user} />
+      <EconomyPanel sag={sag} economics={economics} user={user} products={products} />
       <StamdataForm sag={sag} user={user} />
       <Timeline sag={sag} />
     </div>

@@ -1,7 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { canTransition } from "./fsm";
-import { caseEconomics, rollupEconomics } from "./coverage";
+import { caseEconomics, quoteEconomics, rollupEconomics } from "./coverage";
 
 describe("FSM", () => {
   it("blocks skip from NY to faktura", () => {
@@ -41,6 +41,17 @@ describe("dækningsgrad", () => {
     assert.equal(economics.coverage, (100_000_00 - 14_500_00) / 100_000_00);
   });
 
+  it("uses material cost price when it is set", () => {
+    const economics = caseEconomics({
+      estimatedRevenue: 100_000_00,
+      invoices: [],
+      timeEntries: [],
+      materials: [{ quantity: 2, unitPrice: 10_000_00, costPrice: 4_000_00 }],
+    });
+    assert.equal(economics.materialCost, 8_000_00);
+    assert.equal(economics.cost, 8_000_00);
+  });
+
   it("rolls up portfolio coverage", () => {
     const total = rollupEconomics([
       {
@@ -65,5 +76,17 @@ describe("dækningsgrad", () => {
       },
     ]);
     assert.equal(total.coverage, 0.65);
+  });
+});
+
+describe("tilbudskalkulation", () => {
+  it("computes sale, cost and coverage from quote lines", () => {
+    const totals = quoteEconomics([
+      { quantity: 8, unitPrice: 595_00, costPrice: 280_00 },
+      { quantity: 1, unitPrice: 4_200_00, costPrice: 2_100_00 },
+    ]);
+    assert.equal(totals.sale, 8_960_00);
+    assert.equal(totals.cost, 4_340_00);
+    assert.equal(totals.coverage, (8_960_00 - 4_340_00) / 8_960_00);
   });
 });

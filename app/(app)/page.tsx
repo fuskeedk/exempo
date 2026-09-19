@@ -30,6 +30,20 @@ export default async function DashboardPage() {
   const totals = rollupEconomics(rows.map((row) => row.economics));
   const open = cases.filter((sag) => !["AFSLUTTET", "ANNULLERET"].includes(sag.state));
 
+  const [openQuotes, pendingExtra, overdueInvoices] = office
+    ? await Promise.all([
+        prisma.quote.count({ where: { status: "SENDT" } }),
+        prisma.extraWork.count({ where: { status: "SENDT" } }),
+        prisma.invoice.count({
+          where: {
+            status: { in: ["SENDT", "RYKKET", "INKASSO"] },
+            paidAt: null,
+            dueAt: { lt: new Date() },
+          },
+        }),
+      ])
+    : [0, 0, 0];
+
   const columns = ACTIVE_PIPELINE.map((state) => ({
     state,
     items: cases.filter((sag) => sag.state === state),
@@ -38,9 +52,9 @@ export default async function DashboardPage() {
   return (
     <>
       <PageHeader
-        kicker="Tavle"
-        title={office ? "Sager i pipeline" : "Dine sager"}
-        description="Følg sagerne gennem FSM: oprettelse, planlægning, udførelse, KLS og faktura."
+        kicker="Overblik"
+        title={office ? "Ordrer i pipeline" : "Dine arbejdssedler"}
+        description="Fra tilbud og nye sager til udførelse, KLS og faktura — samme flow som i Minuba."
         actions={office ? <PrimaryLink href="/sager/ny">Ny sag</PrimaryLink> : null}
       />
 
@@ -53,6 +67,20 @@ export default async function DashboardPage() {
           value={totals.coverage === null ? "—" : `${(Math.round(totals.coverage * 1000) / 10).toString().replace(".", ",")} %`}
         />
       </div>
+
+      {office ? (
+        <div className="mb-8 grid gap-4 sm:grid-cols-3">
+          <Link href="/tilbud" className="block">
+            <Stat label="Tilbud afventer" value={String(openQuotes)} hint="Sendt til kunden" />
+          </Link>
+          <Link href="/sager" className="block">
+            <Stat label="Ekstraarbejde" value={String(pendingExtra)} hint="Sendt, mangler godkendelse" />
+          </Link>
+          <Link href="/rykkere" className="block">
+            <Stat label="Forfaldne fakturaer" value={String(overdueInvoices)} hint="Rykkere og inkasso" />
+          </Link>
+        </div>
+      ) : null}
 
       <div className="mb-8 overflow-x-auto pb-2">
         <div className="flex min-w-[1100px] gap-3">

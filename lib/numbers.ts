@@ -13,6 +13,19 @@ export async function nextCaseNumber(now = new Date()): Promise<string> {
   return `${prefix}${String(next).padStart(4, "0")}`;
 }
 
+export async function nextQuoteNumber(now = new Date()): Promise<string> {
+  const year = now.getFullYear();
+  const prefix = `TIL-${year}-`;
+  const latest = await prisma.quote.findFirst({
+    where: { quoteNumber: { startsWith: prefix } },
+    orderBy: { quoteNumber: "desc" },
+    select: { quoteNumber: true },
+  });
+  const last = latest ? Number.parseInt(latest.quoteNumber.slice(prefix.length), 10) : 0;
+  const next = Number.isFinite(last) ? last + 1 : 1;
+  return `${prefix}${String(next).padStart(4, "0")}`;
+}
+
 export async function nextInvoiceNumber(now = new Date()): Promise<string> {
   const year = now.getFullYear();
   const prefix = `FAK-${year}-`;

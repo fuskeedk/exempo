@@ -36,27 +36,63 @@ async function transitionContext(caseId: string) {
 export async function createCaseAction(formData: FormData) {
   const user = await requireRole(["ADMIN", "PL"]);
   const title = str(formData, "title");
-  const customerName = str(formData, "customerName");
-  const customerAddress = str(formData, "customerAddress");
+  if (!title) throw new Error("Titel er påkrævet.");
+
+  const trade = str(formData, "trade") || "ANDET";
+  const customerId = str(formData, "customerId");
+  let customerName = str(formData, "customerName");
+  let customerAddress = str(formData, "customerAddress");
+  let customerPostal = str(formData, "customerPostal");
+  let customerCity = str(formData, "customerCity");
+  let customerPhone = str(formData, "customerPhone");
+  let customerEmail = str(formData, "customerEmail");
+  let addressId: string | undefined;
+
+  if (customerId) {
+    const customer = await prisma.customer.findUnique({
+      where: { id: customerId },
+      include: { addresses: true },
+    });
+    if (customer) {
+      customerName = customer.name;
+      customerPhone = customer.phone;
+      customerEmail = customer.email;
+      const address =
+        customer.addresses.find((item) => item.id === str(formData, "addressId")) ??
+        customer.addresses[0];
+      if (address) {
+        addressId = address.id;
+        customerAddress = address.street;
+        customerPostal = address.postal;
+        customerCity = address.city;
+      }
+    }
+  }
+
   if (!title || !customerName || !customerAddress) {
     throw new Error("Titel, kundenavn og adresse er påkrævet.");
   }
 
-  const trade = str(formData, "trade") || "ANDET";
   const caseNumber = await nextCaseNumber();
   const sag = await prisma.case.create({
     data: {
       caseNumber,
       title,
       description: str(formData, "description"),
+      customerId: customerId || undefined,
+      addressId,
       customerName,
       customerAddress,
-      customerPostal: str(formData, "customerPostal"),
-      customerCity: str(formData, "customerCity"),
-      customerPhone: str(formData, "customerPhone"),
-      customerEmail: str(formData, "customerEmail"),
+      customerPostal,
+      customerCity,
+      customerPhone,
+      customerEmail,
       insuranceCompany: str(formData, "insuranceCompany"),
       claimNumber: str(formData, "claimNumber"),
+      requisition: str(formData, "requisition"),
+      referencePerson: str(formData, "referencePerson"),
+      orderType: str(formData, "orderType") || "SKADE",
+      pricingMode: str(formData, "pricingMode") || "FAST_PRIS",
       trade: isTrade(trade) ? trade : "ANDET",
       projectLeaderId: user.id,
       estimatedRevenue: parseKrToOre(str(formData, "estimatedRevenue")),
@@ -206,6 +242,7 @@ export async function addTimeEntryAction(formData: FormData) {
       hours,
       hourlyRate: worker.hourlyRate,
       date,
+      kind: str(formData, "kind") || "ARBEJDE",
       note: str(formData, "note"),
     },
   });
@@ -225,6 +262,7 @@ export async function addMaterialAction(formData: FormData) {
       name,
       quantity,
       unitPrice: parseKrToOre(str(formData, "unitPrice")),
+      costPrice: parseKrToOre(str(formData, "costPrice")),
     },
   });
   revalidatePath(`/sager/${caseId}`);

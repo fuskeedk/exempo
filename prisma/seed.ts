@@ -9,13 +9,24 @@ async function main() {
   await prisma.klsReport.deleteMany();
   await prisma.klsItem.deleteMany();
   await prisma.klsTemplate.deleteMany();
+  await prisma.reminder.deleteMany();
   await prisma.invoiceLine.deleteMany();
   await prisma.invoice.deleteMany();
+  await prisma.extraWork.deleteMany();
   await prisma.material.deleteMany();
   await prisma.timeEntry.deleteMany();
+  await prisma.absence.deleteMany();
   await prisma.document.deleteMany();
   await prisma.caseEvent.deleteMany();
+  await prisma.resourceBooking.deleteMany();
+  await prisma.resource.deleteMany();
+  await prisma.quoteLine.deleteMany();
   await prisma.case.deleteMany();
+  await prisma.quote.deleteMany();
+  await prisma.serviceAgreement.deleteMany();
+  await prisma.address.deleteMany();
+  await prisma.product.deleteMany();
+  await prisma.customer.deleteMany();
   await prisma.user.deleteMany();
 
   const passwordHash = await bcrypt.hash("exempo123", 10);
@@ -96,6 +107,124 @@ async function main() {
       hourlyRate: 43000,
       color: "#8a6d3b",
     },
+  });
+
+  const moeller = await prisma.customer.create({
+    data: {
+      name: "Familie Møller",
+      type: "PRIVAT",
+      email: "moeller@example.dk",
+      phone: "40 12 88 21",
+      addresses: { create: { label: "Hjem", street: "Strandvejen 214", postal: "2900", city: "Hellerup" } },
+    },
+    include: { addresses: true },
+  });
+  const nadia = await prisma.customer.create({
+    data: {
+      name: "Nadia Hassan",
+      type: "PRIVAT",
+      phone: "61 20 44 09",
+      addresses: { create: { label: "Lejlighed", street: "Nørrebrogade 88, 3. th", postal: "2200", city: "København N" } },
+    },
+    include: { addresses: true },
+  });
+  const dam = await prisma.customer.create({
+    data: {
+      name: "Ole og Kirsten Dam",
+      type: "PRIVAT",
+      phone: "23 88 10 55",
+      addresses: { create: { label: "Villa", street: "Birkevej 7", postal: "5000", city: "Odense C" } },
+    },
+    include: { addresses: true },
+  });
+  const aalborg = await prisma.customer.create({
+    data: {
+      name: "Aalborg Boligselskab",
+      type: "ERHVERV",
+      cvr: "12345678",
+      phone: "98 12 40 00",
+      addresses: { create: { label: "Vesterbro", street: "Vesterbro 14, st. tv", postal: "9000", city: "Aalborg" } },
+    },
+    include: { addresses: true },
+  });
+  const kragh = await prisma.customer.create({
+    data: {
+      name: "Jens Kragh",
+      type: "PRIVAT",
+      addresses: { create: { label: "Rækkehus", street: "Amagerbrogade 152", postal: "2300", city: "København S" } },
+    },
+    include: { addresses: true },
+  });
+  const frost = await prisma.customer.create({
+    data: {
+      name: "Line Frost",
+      type: "PRIVAT",
+      addresses: { create: { label: "Hus", street: "Helligkorsvej 9", postal: "4000", city: "Roskilde" } },
+    },
+    include: { addresses: true },
+  });
+  const glostrup = await prisma.customer.create({
+    data: {
+      name: "Glostrup Ejendomme",
+      type: "ERHVERV",
+      cvr: "87654321",
+      addresses: { create: { label: "Hovedvejen", street: "Hovedvejen 41", postal: "2600", city: "Glostrup" } },
+    },
+    include: { addresses: true },
+  });
+
+  await prisma.product.createMany({
+    data: [
+      { sku: "GIPS-13", barcode: "5701234560001", name: "Gipsplade 13 mm", unit: "stk", group: "EGNE", costPrice: 4500, salePrice: 8900, stock: 48 },
+      { sku: "FUG-01", barcode: "5701234560002", name: "Fugemasse hvid", unit: "stk", group: "EGNE", costPrice: 2800, salePrice: 6500, stock: 36 },
+      { sku: "KABEL-2.5", barcode: "5701234560003", name: "Installationskabel 2,5 mm", unit: "m", group: "GROSSIST", costPrice: 900, salePrice: 1850, stock: 200 },
+      { sku: "MAL-10", barcode: "5701234560004", name: "Vægmaling 10 L", unit: "stk", group: "EGNE", costPrice: 22000, salePrice: 38900, stock: 12 },
+      { sku: "TIME-SVEND", name: "Svendetime", unit: "t", group: "YDELSE", costPrice: 28000, salePrice: 59500, stock: 0 },
+    ],
+  });
+
+  const van = await prisma.resource.create({
+    data: { name: "Varebil 1", type: "KØRETØJ", dailyRate: 45000, color: "#3d5a80" },
+  });
+  const lift = await prisma.resource.create({
+    data: { name: "Lift 12 m", type: "UDSTYR", dailyRate: 120000, color: "#8a6d3b" },
+  });
+
+  const quote = await prisma.quote.create({
+    data: {
+      quoteNumber: "TIL-2026-0001",
+      customerId: aalborg.id,
+      addressId: aalborg.addresses[0].id,
+      title: "Badeværelses-retablering efter rørskade",
+      description: "Åbning, tørring og retablering af gulv og vægge.",
+      trade: "VVS",
+      pricingMode: "KALKULATION",
+      status: "SENDT",
+      createdById: pl.id,
+      validUntil: addDays(new Date(), 21),
+      lines: {
+        create: [
+          { kind: "TIMER", description: "VVS-svend", quantity: 16, unit: "t", unitPrice: 59500, costPrice: 28000 },
+          { kind: "MATERIALE", description: "Rør og fittings", quantity: 1, unitPrice: 420000, costPrice: 210000 },
+        ],
+      },
+    },
+  });
+
+  await prisma.serviceAgreement.create({
+    data: {
+      customerId: glostrup.id,
+      title: "Årligt facadesyn",
+      description: "Eftersyn af puds og fuger.",
+      trade: "MURER",
+      intervalMonths: 12,
+      nextVisit: addDays(new Date(), 14),
+      estimatedRevenue: 1250000,
+    },
+  });
+
+  await prisma.absence.create({
+    data: { userId: lars.id, date: addDays(new Date(), 3), hours: 7.4, type: "FERIE", note: "Sommerferie rest" },
   });
 
   const templates = [
@@ -192,6 +321,8 @@ async function main() {
       title: "Vandskade i køkken — villa",
       description:
         "Utæt opvaskemaskine har givet skade i sokkel, gulv og bagvæg. Forsikring har godkendt genopbygning.",
+      customerId: moeller.id,
+      addressId: moeller.addresses[0].id,
       customerName: "Familie Møller",
       customerAddress: "Strandvejen 214",
       customerPostal: "2900",
@@ -224,10 +355,21 @@ async function main() {
       },
       materials: {
         create: [
-          { name: "Fugtspærre og underlag", quantity: 1, unitPrice: 420000 },
-          { name: "Køkkenplade, eg", quantity: 1, unitPrice: 680000 },
+          { name: "Fugtspærre og underlag", quantity: 1, unitPrice: 420000, costPrice: 210000 },
+          { name: "Køkkenplade, eg", quantity: 1, unitPrice: 680000, costPrice: 340000 },
         ],
       },
+    },
+  });
+
+  await prisma.extraWork.create({
+    data: {
+      caseId: sag1.id,
+      title: "Udskiftning af sokkelpanel",
+      description: "Ikke omfattet af oprindeligt skøn.",
+      amount: 450000,
+      status: "SENDT",
+      createdById: lars.id,
     },
   });
 
@@ -236,6 +378,8 @@ async function main() {
       caseNumber: "EX-2026-0002",
       title: "Brandskade i køkken — lejlighed",
       description: "Fedtbrand i emhætte. Fliser, el og malerarbejde skal genopbygges.",
+      customerId: nadia.id,
+      addressId: nadia.addresses[0].id,
       customerName: "Nadia Hassan",
       customerAddress: "Nørrebrogade 88, 3. th",
       customerPostal: "2200",
@@ -288,6 +432,8 @@ async function main() {
       caseNumber: "EX-2026-0003",
       title: "Stormskade på tag",
       description: "Løse tagsten og indtrængende vand på loft efter stormen.",
+      customerId: dam.id,
+      addressId: dam.addresses[0].id,
       customerName: "Ole og Kirsten Dam",
       customerAddress: "Birkevej 7",
       customerPostal: "5000",
@@ -318,6 +464,8 @@ async function main() {
       caseNumber: "EX-2026-0004",
       title: "Rørskade i badeværelse",
       description: "Sprunget rør bag toilet. Gulv og vægge skal åbnes og retableres.",
+      customerId: aalborg.id,
+      addressId: aalborg.addresses[0].id,
       customerName: "Aalborg Boligselskab",
       customerAddress: "Vesterbro 14, st. tv",
       customerPostal: "9000",
@@ -341,6 +489,8 @@ async function main() {
       caseNumber: "EX-2026-0005",
       title: "Fugt i kælder — rækkehus",
       description: "Opstigende grundfugt. Kældervægge renset, spærret og malet.",
+      customerId: kragh.id,
+      addressId: kragh.addresses[0].id,
       customerName: "Jens Kragh",
       customerAddress: "Amagerbrogade 152",
       customerPostal: "2300",
@@ -393,6 +543,7 @@ async function main() {
     data: {
       invoiceNumber: "FAK-2026-0001",
       caseId: sag5.id,
+      customerId: kragh.id,
       createdById: pl.id,
       status: "SENDT",
       notes: "Forsikringssag COD-33018",
@@ -412,6 +563,8 @@ async function main() {
       caseNumber: "EX-2026-0006",
       title: "Hagelskade på carport",
       description: "Haglnedslag i tagplader. Udskiftning og maling.",
+      customerId: frost.id,
+      addressId: frost.addresses[0].id,
       customerName: "Line Frost",
       customerAddress: "Helligkorsvej 9",
       customerPostal: "4000",
@@ -463,6 +616,8 @@ async function main() {
       caseNumber: "EX-2026-0007",
       title: "Pudsreparation efter påkørsel",
       description: "Hjørne af facade påkørt. Puds og sokkel repareres.",
+      customerId: glostrup.id,
+      addressId: glostrup.addresses[0].id,
       customerName: "Glostrup Ejendomme",
       customerAddress: "Hovedvejen 41",
       customerPostal: "2600",
@@ -486,6 +641,25 @@ async function main() {
     },
   });
 
+  await prisma.resourceBooking.create({
+    data: {
+      resourceId: lift.id,
+      caseId: sag3.id,
+      start: setHours(addDays(monday, 3), 7),
+      end: setHours(addDays(monday, 4), 15),
+      note: "Stormskade tag",
+    },
+  });
+  await prisma.resourceBooking.create({
+    data: {
+      resourceId: van.id,
+      caseId: sag1.id,
+      start: setHours(addDays(monday, 0), 8),
+      end: setHours(addDays(monday, 1), 15),
+      note: "Lars — villa Hellerup",
+    },
+  });
+
   console.log("Seeded Exempo with", {
     users: 6,
     cases: 7,
@@ -494,6 +668,7 @@ async function main() {
     sag1: sag1.caseNumber,
     sag3: sag3.caseNumber,
     sag4: sag4.caseNumber,
+    quote: quote.quoteNumber,
   });
 }
 
