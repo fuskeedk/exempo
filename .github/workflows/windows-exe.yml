@@ -21,6 +21,8 @@ jobs:
         with:
           go-version: "1.22"
       - run: npm ci
+      - run: copy .env.example .env
+        shell: cmd
       - run: npm run package:win
       - uses: actions/upload-artifact@v4
         with:

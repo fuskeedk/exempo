@@ -19,11 +19,20 @@ const zipPath = join(root, "dist", "Exempo-windows.zip");
 const nodeVersion = process.env.EXEMPO_NODE_VERSION || "22.14.0";
 const nodeUrl = `https://nodejs.org/dist/v${nodeVersion}/win-x64/node.exe`;
 
+const defaultEnv = {
+  ...process.env,
+  DATABASE_URL: process.env.DATABASE_URL || "file:./dev.db",
+  AUTH_SECRET: process.env.AUTH_SECRET || "exempo-ci-secret-change-me-please-32b",
+};
+
 function run(command, args, extra = {}) {
+  const { env: extraEnv, ...rest } = extra;
   const result = spawnSync(command, args, {
     cwd: root,
     stdio: "inherit",
-    ...extra,
+    shell: process.platform === "win32",
+    env: { ...defaultEnv, ...extraEnv },
+    ...rest,
   });
   if (result.status !== 0) {
     throw new Error(`${command} ${args.join(" ")} failed`);
@@ -57,6 +66,13 @@ function collectWindowsEngines(dir, found = []) {
     }
   }
   return found;
+}
+
+if (!existsSync(join(root, ".env"))) {
+  writeFileSync(
+    join(root, ".env"),
+    'DATABASE_URL="file:./dev.db"\nAUTH_SECRET="exempo-ci-secret-change-me-please-32b"\n',
+  );
 }
 
 rmSync(dist, { recursive: true, force: true });
@@ -127,12 +143,12 @@ run("go", ["build", "-o", join(dist, "Exempo.exe"), join(root, "packaging", "lau
 });
 
 if (existsSync(zipPath)) rmSync(zipPath);
-const zip = spawnSync("zip", ["-r", "-q", zipPath, "Exempo-win"], {
-  cwd: join(root, "dist"),
-  stdio: "inherit",
-});
-if (zip.status !== 0) {
-  throw new Error("zip fejlede — installer zip eller kør scriptet på Windows.");
+if (process.platform === "win32") {
+  run("tar", ["-a", "-c", "-f", "Exempo-windows.zip", "Exempo-win"], {
+    cwd: join(root, "dist"),
+  });
+} else {
+  run("zip", ["-r", "-q", zipPath, "Exempo-win"], { cwd: join(root, "dist") });
 }
 
 console.log("Pakke klar:", zipPath);
