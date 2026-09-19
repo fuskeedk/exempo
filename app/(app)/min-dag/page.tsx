@@ -12,24 +12,23 @@ import { SubmitButton } from "@/components/SubmitButton";
 import { Card, Field, Input, PageHeader, Select } from "@/components/ui";
 import { canManageOffice, requireSession } from "@/lib/auth";
 import { ABSENCE_TYPE_LABELS, ABSENCE_TYPES } from "@/lib/catalog";
-import { toDateInput } from "@/lib/dates";
+import { toDateInput, weekStart } from "@/lib/dates";
 import { prisma } from "@/lib/prisma";
+import { addDays } from "date-fns";
 
 export default async function MyDayPage() {
   const user = await requireSession();
   const office = canManageOffice(user.role);
   const worker = await prisma.user.findUnique({ where: { id: user.id } });
-  const start = new Date();
-  start.setHours(0, 0, 0, 0);
-  const end = new Date(start);
-  end.setDate(end.getDate() + 1);
+  const weekFrom = weekStart(new Date());
+  const weekTo = addDays(weekFrom, 7);
 
   const jobs = await prisma.case.findMany({
     where: {
       state: { notIn: ["AFSLUTTET", "ANNULLERET"] },
       OR: [
         { assignedToId: user.id },
-        ...(office ? [{ scheduledStart: { gte: start, lt: end } }] : []),
+        ...(office ? [{ scheduledStart: { gte: weekFrom, lt: weekTo } }] : []),
       ],
     },
     orderBy: { scheduledStart: "asc" },
@@ -115,6 +114,13 @@ export default async function MyDayPage() {
             </form>
           </Card>
         ))}
+        {jobs.length === 0 ? (
+          <Card>
+            <p className="text-sm text-muted">
+              Ingen job i kalenderen lige nu. Åbn arbejdssedler, eller få PL til at lægge dig på planlægningen.
+            </p>
+          </Card>
+        ) : null}
       </div>
 
       <Card className="mt-8">

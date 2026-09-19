@@ -23,6 +23,7 @@ export default async function ProductsPage() {
               <tr>
                 <th className="px-5 py-3">Vare</th>
                 <th className="px-5 py-3">Nr.</th>
+                <th className="px-5 py-3">Stregkode</th>
                 <th className="px-5 py-3">Lager</th>
                 <th className="px-5 py-3">Kost</th>
                 <th className="px-5 py-3">Salg</th>
@@ -36,6 +37,7 @@ export default async function ProductsPage() {
                     <p className="text-muted">{product.group} · {product.unit}</p>
                   </td>
                   <td className="px-5 py-3">{product.sku}</td>
+                  <td className="px-5 py-3">{product.barcode || "—"}</td>
                   <td className="px-5 py-3">{product.group === "YDELSE" ? "—" : product.stock}</td>
                   <td className="px-5 py-3">{formatKr(product.costPrice)}</td>
                   <td className="px-5 py-3">{formatKr(product.salePrice)}</td>

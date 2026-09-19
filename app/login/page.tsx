@@ -14,13 +14,12 @@ export default async function LoginPage({
         <div className="text-[#f4efe4]">
           <p className="text-xs uppercase tracking-[0.28em] text-[#d7c9a8]">Exempo</p>
           <h1 className="mt-3 font-serif text-5xl leading-tight">
-            Sager. Kalender.
+            Tilbud. Arbejdssedler.
             <br />
-            KLS. Dækningsgrad.
+            Planlægning. Faktura.
           </h1>
           <p className="mt-5 max-w-md text-lg text-[#e4d8c0]">
-            Ét system til skadesager — fra oprettelse til faktura, med medarbejderkalender
-            og kvalitetsledelse undervejs.
+            Ordrestyring til håndværk — samme flow som Minuba, fra tilbud til dækningsgrad.
           </p>
         </div>
         <form action={loginAction} className="rounded-3xl bg-paper p-8 shadow-2xl">
@@ -32,11 +31,11 @@ export default async function LoginPage({
           <div className="mt-6 space-y-4">
             <label className="block">
               <Label>E-mail</Label>
-              <Input name="email" type="email" defaultValue="pl@exempo.dk" required />
+              <Input id="email" name="email" type="email" defaultValue="pl@exempo.dk" required autoComplete="username" />
             </label>
             <label className="block">
               <Label>Adgangskode</Label>
-              <Input name="password" type="password" defaultValue="exempo123" required />
+              <Input id="password" name="password" type="password" defaultValue="exempo123" required autoComplete="current-password" />
             </label>
             <SubmitButton>Fortsæt</SubmitButton>
           </div>
