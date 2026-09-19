@@ -14,6 +14,23 @@ npm run dev
 
 Åbn [http://localhost:3000](http://localhost:3000).
 
+## Windows .exe
+
+På en Windows-PC kan du køre Exempo uden at installere Node eller Git:
+
+1. Hent `Exempo-windows.zip` fra GitHub Actions på branchen (kør *Windows exe*, download artifact).
+2. Pak **hele mappen** ud.
+3. Dobbeltklik `Exempo.exe`.
+4. Log ind med `pl@exempo.dk` / `exempo123`.
+
+Byg selv:
+
+```bash
+npm run package:win
+```
+
+Zip-filen ligger i `dist/Exempo-windows.zip`. Windows kan advare om en usigneret fil — vælg *Flere oplysninger* → *Kør alligevel*.
+
 | Rolle | Login | Kode |
 | --- | --- | --- |
 | Projektleder | pl@exempo.dk | exempo123 |
