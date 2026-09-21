@@ -1,12 +1,11 @@
 import Link from "next/link";
-import { Card, PageHeader, PrimaryLink } from "@/components/ui";
-import { requireSession, canManageOffice } from "@/lib/auth";
+import { Card, PageHeader } from "@/components/ui";
+import { requireSession } from "@/lib/auth";
 import { CUSTOMER_TYPE_LABELS } from "@/lib/catalog";
 import { prisma } from "@/lib/prisma";
 
 export default async function CustomersPage() {
-  const user = await requireSession();
-  const office = canManageOffice(user.role);
+  await requireSession();
   const customers = await prisma.customer.findMany({
     include: { addresses: true, _count: { select: { cases: true, quotes: true } } },
     orderBy: { name: "asc" },
@@ -16,8 +15,8 @@ export default async function CustomersPage() {
       <PageHeader
         kicker="Kartotek"
         title="Kunder og adresser"
-        description="Som i Minuba: ét kartotek til kunder, adresser, sager og tilbud."
-        actions={office ? <PrimaryLink href="/kunder/ny">Ny kunde</PrimaryLink> : null}
+        description="Ét kartotek til kunder, adresser, sager og tilbud."
+        tour="tour-page"
       />
       <Card className="overflow-x-auto p-0">
         <table className="w-full text-left text-sm">

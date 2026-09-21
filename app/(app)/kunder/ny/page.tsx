@@ -1,4 +1,5 @@
 import { createCustomerAction } from "@/app/actions/customers";
+import { AddressAutocomplete } from "@/components/AddressAutocomplete";
 import { SubmitButton } from "@/components/SubmitButton";
 import { Card, Field, Input, PageHeader, Select, Textarea } from "@/components/ui";
 import { requireRole } from "@/lib/auth";
@@ -27,7 +28,7 @@ export default async function NewCustomerPage() {
             <Input name="cvr" />
           </Field>
           <Field label="Telefon">
-            <Input name="phone" />
+            <Input name="phone" type="tel" inputMode="tel" />
           </Field>
           <Field label="E-mail">
             <Input name="email" type="email" />
@@ -35,17 +36,7 @@ export default async function NewCustomerPage() {
           <Field label="Adresselabel">
             <Input name="addressLabel" defaultValue="Primær" />
           </Field>
-          <Field label="Adresse">
-            <Input name="street" required />
-          </Field>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Postnr.">
-              <Input name="postal" />
-            </Field>
-            <Field label="By">
-              <Input name="city" />
-            </Field>
-          </div>
+          <AddressAutocomplete streetName="street" postalName="postal" cityName="city" streetRequired />
           <Field label="Noter">
             <Textarea name="notes" rows={3} />
           </Field>

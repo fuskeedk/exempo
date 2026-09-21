@@ -17,6 +17,16 @@ model User {
   trade           String    @default("ANDET")
   phone           String    @default("")
   hourlyRate      Int       @default(45000)
+  wageRate        Int       @default(0)
+  payType         String    @default("TIMER")
+  monthlySalary   Int       @default(0)
+  employeeNumber  String    @default("")
+  agreementCode   String    @default("NONE")
+  apprenticeStep  Int       @default(0)
+  apprenticeStart DateTime?
+  managerId       String?
+  manager         User?     @relation("EmployeeManager", fields: [managerId], references: [id], onDelete: SetNull)
+  team            User[]    @relation("EmployeeManager")
   active          Boolean   @default(true)
   color           String    @default("#2d6a52")
   timerCaseId     String?
@@ -32,8 +42,14 @@ model User {
   klsReports    KlsReport[]
   invoices      Invoice[]
   absences      Absence[]
-  quotes        Quote[]
-  extraWorks    ExtraWork[]
+  quotes             Quote[]
+  extraWorks         ExtraWork[]
+  approvedPurchases     Purchase[]  @relation("PurchaseApprovedBy")
+  responsiblePurchases  Purchase[]  @relation("PurchaseResponsible")
+  calendarActivities    CalendarActivity[]
+  timesheets            Timesheet[]
+  approvedTimesheets    Timesheet[] @relation("TimesheetApprover")
+  vanStock              VanStock[]
 }
 
 model Customer {
@@ -78,10 +94,23 @@ model Product {
   salePrice Int        @default(0)
   vat       Int        @default(25)
   stock     Int        @default(0)
+  imageUrl  String     @default("")
   billable  Boolean    @default(true)
   active    Boolean    @default(true)
   materials Material[]
   quoteLines QuoteLine[]
+  vanStock  VanStock[]
+}
+
+model VanStock {
+  id        String  @id @default(cuid())
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity  Float   @default(0)
+
+  @@unique([userId, productId])
 }
 
 model Quote {
@@ -96,14 +125,23 @@ model Quote {
   trade       String      @default("ANDET")
   pricingMode String      @default("FAST_PRIS")
   status      String      @default("KLADDE")
-  validUntil  DateTime?
-  createdById String?
-  createdBy   User?       @relation(fields: [createdById], references: [id])
-  caseId      String?
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  lines       QuoteLine[]
-  cases       Case[]
+  validUntil    DateTime?
+  shareToken    String?     @unique
+  emailedAt     DateTime?
+  emailedTo     String      @default("")
+  emailedMessageId String   @default("")
+  repliedAt     DateTime?
+  repliedFrom   String      @default("")
+  approvedAt    DateTime?
+  approvedName  String      @default("")
+  rejectedNote  String      @default("")
+  createdById   String?
+  createdBy     User?       @relation(fields: [createdById], references: [id])
+  caseId        String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  lines         QuoteLine[]
+  cases         Case[]
 }
 
 model QuoteLine {
@@ -141,6 +179,17 @@ model Case {
   claimNumber      String    @default("")
   requisition      String    @default("")
   referencePerson  String    @default("")
+  attn             String    @default("")
+  address2         String    @default("")
+  country          String    @default("DK")
+  vatNumber        String    @default("")
+  billingAddress   String    @default("")
+  billingPostal    String    @default("")
+  billingCity      String    @default("")
+  followUpAt       DateTime?
+  followUpNote     String    @default("")
+  confirmationText String    @default("")
+  reverseCharge    Boolean   @default(false)
   orderType        String    @default("SKADE")
   pricingMode      String    @default("FAST_PRIS")
   state            String    @default("NY")
@@ -163,6 +212,8 @@ model Case {
   klsReports  KlsReport[]
   invoices    Invoice[]
   extraWorks  ExtraWork[]
+  purchases   Purchase[]
+  calendarActivities CalendarActivity[]
 
   @@index([state])
   @@index([assignedToId])
@@ -197,8 +248,8 @@ model Document {
 
 model TimeEntry {
   id         String   @id @default(cuid())
-  caseId     String
-  case       Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  caseId     String?
+  case       Case?    @relation(fields: [caseId], references: [id], onDelete: SetNull)
   userId     String
   user       User     @relation(fields: [userId], references: [id])
   hours      Float
@@ -208,6 +259,25 @@ model TimeEntry {
   billable   Boolean  @default(true)
   note       String   @default("")
   createdAt  DateTime @default(now())
+}
+
+model CalendarActivity {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  caseId    String?
+  case      Case?    @relation(fields: [caseId], references: [id], onDelete: SetNull)
+  start     DateTime
+  end       DateTime
+  kind        String   @default("ARBEJDE")
+  status      String   @default("PLANLAGT")
+  note        String   @default("")
+  allDay      Boolean  @default(false)
+  timeEntryId String?
+  absenceId   String?
+  createdAt   DateTime @default(now())
+
+  @@index([userId, start])
 }
 
 model Absence {
@@ -229,6 +299,7 @@ model Material {
   product   Product? @relation(fields: [productId], references: [id])
   name      String
   sku       String   @default("")
+  imageUrl  String   @default("")
   quantity  Float    @default(1)
   unitPrice Int
   costPrice Int      @default(0)
@@ -237,16 +308,18 @@ model Material {
 }
 
 model ExtraWork {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   caseId      String
-  case        Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  case        Case      @relation(fields: [caseId], references: [id], onDelete: Cascade)
   title       String
-  description String   @default("")
-  amount      Int      @default(0)
-  status      String   @default("KLADDE")
+  description String    @default("")
+  amount      Int       @default(0)
+  status      String    @default("KLADDE")
+  signedName  String    @default("")
+  signedAt    DateTime?
   createdById String?
-  createdBy   User?    @relation(fields: [createdById], references: [id])
-  createdAt   DateTime @default(now())
+  createdBy   User?     @relation(fields: [createdById], references: [id])
+  createdAt   DateTime  @default(now())
 }
 
 model KlsTemplate {
@@ -359,4 +432,166 @@ model ResourceBooking {
   start      DateTime
   end        DateTime
   note       String   @default("")
+}
+
+model Setting {
+  key   String @id
+  value String @default("")
+}
+
+model MailAccount {
+  id              String   @id @default(cuid())
+  name            String
+  address         String
+  purpose         String   @default("FAKTURA")
+  smtpHost        String   @default("")
+  smtpPort        String   @default("587")
+  smtpUser        String   @default("")
+  smtpPassword    String   @default("")
+  smtpEncryption  String   @default("tls")
+  imapHost        String   @default("")
+  imapPort        String   @default("993")
+  imapUser        String   @default("")
+  imapPassword    String   @default("")
+  imapFolder      String   @default("INBOX")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model QuoteMailProcessed {
+  id          String   @id @default(cuid())
+  messageHash String   @unique
+  quoteId     String   @default("")
+  action      String   @default("")
+  createdAt   DateTime @default(now())
+}
+
+model WholesalerAgreement {
+  id                 String    @id @default(cuid())
+  name               String
+  excludedFromSearch Boolean   @default(false)
+  agreementNumber    String    @default("")
+  discountUntil      DateTime?
+  ediEnabled         Boolean   @default(false)
+  ediReceivedAt      DateTime?
+  listPriceAt        DateTime?
+  loginUrl           String    @default("")
+  username           String    @default("")
+  password           String    @default("")
+  note               String    @default("")
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+}
+
+model Purchase {
+  id                String         @id @default(cuid())
+  source            String         @default("MANUEL")
+  externalId        String         @default("")
+  supplierName      String
+  supplierCvr       String         @default("")
+  invoiceNumber     String         @default("")
+  orderReference    String         @default("")
+  issuedAt          DateTime?
+  dueAt             DateTime?
+  netAmount         Int            @default(0)
+  vatAmount         Int            @default(0)
+  grossAmount       Int            @default(0)
+  currency          String         @default("DKK")
+  status            String         @default("MODTAGET")
+  caseId            String?
+  case              Case?          @relation(fields: [caseId], references: [id])
+  note              String         @default("")
+  followUpNote      String         @default("")
+  followUpAt        DateTime?
+  fileName          String         @default("")
+  exportedAt        DateTime?
+  responsibleUserId String?
+  responsibleUser   User?          @relation("PurchaseResponsible", fields: [responsibleUserId], references: [id])
+  approvedById      String?
+  approvedBy        User?          @relation("PurchaseApprovedBy", fields: [approvedById], references: [id])
+  decidedAt         DateTime?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  lines             PurchaseLine[]
+
+  @@index([status])
+  @@index([source, externalId])
+}
+
+model PurchaseLine {
+  id          String   @id @default(cuid())
+  purchaseId  String
+  purchase    Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  description String
+  quantity    Float    @default(1)
+  unitPrice   Int      @default(0)
+  amount      Int      @default(0)
+}
+
+model CollectiveAgreement {
+  id                    String   @id @default(cuid())
+  code                  String   @unique
+  name                  String
+  unionName             String   @default("")
+  notes                 String   @default("")
+  pensionEmployerBps    Int      @default(0)
+  pensionEmployeeBps    Int      @default(0)
+  holidayPayBps         Int      @default(1250)
+  shBps                 Int      @default(0)
+  fritvalgBps           Int      @default(0)
+  overtimeFirstHours    Int      @default(3)
+  overtimeFirstPct      Int      @default(50)
+  overtimeRestPct       Int      @default(100)
+  overtimeFirstAddonOre Int     @default(0)
+  overtimeRestAddonOre  Int     @default(0)
+  weekHours             Int      @default(37)
+  sickPayPct            Int      @default(100)
+  childSickPayPct       Int      @default(100)
+  apprenticeJson        String   @default("[]")
+  updatedAt             DateTime @updatedAt
+}
+
+model Timesheet {
+  id                 String    @id @default(cuid())
+  userId             String
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  period             String    @default("UGE")
+  start              DateTime
+  end                DateTime
+  status             String    @default("KLADDE")
+  note               String    @default("")
+  rejectNote         String    @default("")
+  submittedAt        DateTime?
+  approvedAt         DateTime?
+  approvedById       String?
+  approvedBy         User?     @relation("TimesheetApprover", fields: [approvedById], references: [id], onDelete: SetNull)
+  agreementCode      String    @default("NONE")
+  agreementName      String    @default("")
+  wageRate           Int       @default(0)
+  costRate           Int       @default(0)
+  payType            String    @default("TIMER")
+  monthlySalary      Int       @default(0)
+  apprenticeStep     Int       @default(0)
+  normalHours        Float     @default(0)
+  overtime50Hours    Float     @default(0)
+  overtime100Hours   Float     @default(0)
+  absenceHours       Float     @default(0)
+  sickHours          Float     @default(0)
+  childSickHours     Float     @default(0)
+  normalOre          Int       @default(0)
+  overtimeOre        Int       @default(0)
+  sickOre            Int       @default(0)
+  holidayPayOre      Int       @default(0)
+  shOre              Int       @default(0)
+  fritvalgOre        Int       @default(0)
+  pensionEmployerOre Int       @default(0)
+  pensionEmployeeOre Int       @default(0)
+  employerCostOre    Int       @default(0)
+  daysJson           String    @default("[]")
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@unique([userId, period, start])
+  @@index([status])
+  @@index([start])
 }

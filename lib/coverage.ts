@@ -63,6 +63,80 @@ export function caseEconomics(input: EconomicsInput): CaseEconomics {
   };
 }
 
+export function billedInvoiceNet(
+  invoices: { status: string; lines: { quantity: number; unitPrice: number }[] }[],
+): number {
+  return invoices
+    .filter((invoice) =>
+      invoice.status === "SENDT" ||
+      invoice.status === "BETALT" ||
+      invoice.status === "RYKKET" ||
+      invoice.status === "INKASSO",
+    )
+    .reduce((sum, invoice) => sum + invoiceNet(invoice.lines), 0);
+}
+
+export type ComposeInvoiceLine = {
+  description: string;
+  quantity: number;
+  unitPrice: number;
+};
+
+export function composeInvoiceOffer(input: {
+  caseNumber: string;
+  title: string;
+  estimatedRevenue: number;
+  pricingMode: string;
+  invoices: { status: string; lines: { quantity: number; unitPrice: number }[] }[];
+  timeEntries: { hours: number; hourlyRate: number; billable?: boolean }[];
+  materials: { name: string; quantity: number; unitPrice: number; billable?: boolean }[];
+  extras: { title: string; amount: number; status: string }[];
+}): { remaining: number; label: string; lines: ComposeInvoiceLine[] } {
+  const billed = billedInvoiceNet(input.invoices);
+  const extras = input.extras
+    .filter((extra) => extra.status === "GODKENDT" && extra.amount)
+    .map((extra) => ({
+      description: `Ekstraarbejde: ${extra.title}`,
+      quantity: 1,
+      unitPrice: extra.amount,
+    }));
+
+  const consumption: ComposeInvoiceLine[] = [];
+  if (input.pricingMode === "FORBRUG") {
+    const labor = Math.round(
+      input.timeEntries
+        .filter((entry) => entry.billable !== false)
+        .reduce((sum, entry) => sum + entry.hours * entry.hourlyRate, 0),
+    );
+    const materials = Math.round(
+      input.materials
+        .filter((material) => material.billable !== false)
+        .reduce((sum, material) => sum + material.quantity * material.unitPrice, 0),
+    );
+    if (labor) consumption.push({ description: "Arbejdsløn efter forbrug", quantity: 1, unitPrice: labor });
+    if (materials) consumption.push({ description: "Materialer efter forbrug", quantity: 1, unitPrice: materials });
+  }
+
+  const orderAmount =
+    input.pricingMode === "FORBRUG"
+      ? invoiceNet(consumption) + invoiceNet(extras)
+      : input.estimatedRevenue + invoiceNet(extras);
+  const remaining = Math.max(0, orderAmount - billed);
+  const label = `${input.caseNumber}: ${input.title}`;
+  const lines: ComposeInvoiceLine[] =
+    input.pricingMode === "FORBRUG" && consumption.length
+      ? [...consumption, ...extras]
+      : [{ description: label, quantity: 1, unitPrice: remaining }, ...extras];
+
+  if (!lines.length) {
+    lines.push({ description: label, quantity: 1, unitPrice: remaining });
+  } else if (input.pricingMode !== "FORBRUG") {
+    lines[0] = { description: label, quantity: 1, unitPrice: remaining };
+  }
+
+  return { remaining, label, lines };
+}
+
 export function rollupEconomics(rows: CaseEconomics[]): CaseEconomics {
   const revenue = rows.reduce((sum, row) => sum + row.revenue, 0);
   const billed = rows.reduce((sum, row) => sum + row.billed, 0);

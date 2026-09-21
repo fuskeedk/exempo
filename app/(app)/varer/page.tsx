@@ -1,20 +1,21 @@
 import { createProductAction } from "@/app/actions/products";
 import { SubmitButton } from "@/components/SubmitButton";
 import { Card, Field, Input, PageHeader, Select } from "@/components/ui";
-import { canManageOffice, requireSession } from "@/lib/auth";
+import { requireRole } from "@/lib/auth";
+import { requireProductCatalog } from "@/lib/modules";
 import { formatKr } from "@/lib/money";
 import { prisma } from "@/lib/prisma";
 
 export default async function ProductsPage() {
-  const user = await requireSession();
-  const office = canManageOffice(user.role);
+  const session = await requireRole(["ADMIN", "PL"]);
+  await requireProductCatalog(session);
   const products = await prisma.product.findMany({ orderBy: { name: "asc" } });
   return (
     <>
       <PageHeader
         kicker="Lager"
         title="Varekatalog"
-        description="Egne varer med varenr. og stregkode. Montøren kan slå dem op på arbejdssedlen."
+        description="Egne varer med varenr. og stregkode. AO-varer søges direkte på arbejdssedlen og Min dag, så I ikke behøver at taste hele kataloget ind her."
       />
       <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
         <Card className="overflow-x-auto p-0">
@@ -46,7 +47,6 @@ export default async function ProductsPage() {
             </tbody>
           </table>
         </Card>
-        {office ? (
           <Card>
             <h2 className="font-serif text-xl">Ny vare</h2>
             <form action={createProductAction} className="mt-4 grid gap-3">
@@ -81,7 +81,6 @@ export default async function ProductsPage() {
               <SubmitButton>Opret vare</SubmitButton>
             </form>
           </Card>
-        ) : null}
       </div>
     </>
   );

@@ -1,10 +1,19 @@
 import bcrypt from "bcryptjs";
 import { addDays, addHours, setHours, startOfWeek } from "date-fns";
+import { randomBytes } from "node:crypto";
 import { PrismaClient } from "@prisma/client";
+import { ensureDefaultTenant, registerLogin } from "../lib/platform";
+import { seedWholesalerAgreements } from "../lib/wholesalers";
+import { DEFAULT_KLS_TEMPLATES } from "../lib/kls-catalog";
 
 const prisma = new PrismaClient();
 
 async function main() {
+  await prisma.purchaseLine.deleteMany();
+  await prisma.purchase.deleteMany();
+  await prisma.mailAccount.deleteMany();
+  await prisma.wholesalerAgreement.deleteMany();
+  await prisma.setting.deleteMany();
   await prisma.klsCheck.deleteMany();
   await prisma.klsReport.deleteMany();
   await prisma.klsItem.deleteMany();
@@ -33,12 +42,12 @@ async function main() {
 
   const admin = await prisma.user.create({
     data: {
-      name: "Mads-Emil Admin",
+      name: "Alex Holm",
       email: "admin@exempo.dk",
       passwordHash,
       role: "ADMIN",
       trade: "ANDET",
-      phone: "20 11 22 33",
+      phone: "11 22 33 44",
       hourlyRate: 65000,
       color: "#1f4a3a",
     },
@@ -227,75 +236,7 @@ async function main() {
     data: { userId: lars.id, date: addDays(new Date(), 3), hours: 7.4, type: "FERIE", note: "Sommerferie rest" },
   });
 
-  const templates = [
-    {
-      name: "KLS — Tømrer, skadesudbedring",
-      trade: "TOMRER",
-      items: [
-        "Foto af skade før arbejde",
-        "Afdækning af tilstødende flader",
-        "Fugt/underlag kontrolleret",
-        "Konstruktion genopbygget efter anvisning",
-        "Dampspærre/membran tæt",
-        "Overflade klar til næste fag",
-        "Oprydning og spild fjernet",
-        "Foto efter arbejde",
-      ],
-    },
-    {
-      name: "KLS — Murer, skadesudbedring",
-      trade: "MURER",
-      items: [
-        "Foto af skade før arbejde",
-        "Underlag bæredygtigt og rent",
-        "Puds/mørtel blandet korrekt",
-        "Fuger og overgange tætte",
-        "Flader i vater og lod",
-        "Afdækning i hærdningsperiode",
-        "Oprydning",
-        "Foto efter arbejde",
-      ],
-    },
-    {
-      name: "KLS — El-installation",
-      trade: "ELEKTRIKER",
-      items: [
-        "Spændingsløs før indgreb",
-        "Eksisterende installation kortlagt",
-        "Nye føringer fastgjort og mærket",
-        "Isolationstest udført",
-        "Funktionstest af kredse",
-        "Kapsling og afdækning genetableret",
-        "Foto efter arbejde",
-      ],
-    },
-    {
-      name: "KLS — Maler",
-      trade: "MALER",
-      items: [
-        "Underlag slibet og støvsuget",
-        "Pletspartling udført",
-        "Grunder påført",
-        "Færdigmaling i aftalt glans",
-        "Kanter dækker uden overlap",
-        "Afdækning fjernet uden skader",
-        "Foto efter arbejde",
-      ],
-    },
-    {
-      name: "KLS — Generel skadesag",
-      trade: "ANDET",
-      items: [
-        "Kunde informeret om arbejdets omfang",
-        "Foto før",
-        "Sikkerhed og afdækning",
-        "Arbejde udført efter beskrivelse",
-        "Afvigelser noteret",
-        "Foto efter",
-        "Kunden har fået gennemgang",
-      ],
-    },
-  ];
+  const templates = DEFAULT_KLS_TEMPLATES;
 
   const createdTemplates = [];
   for (const template of templates) {
@@ -659,6 +600,83 @@ async function main() {
       note: "Lars — villa Hellerup",
     },
   });
+
+  await prisma.setting.createMany({
+    data: [
+      { key: "company_name", value: "Exempo" },
+      { key: "company_email", value: admin.email },
+      { key: "company_domain", value: "exempo.dk" },
+      { key: "case_number_prefix", value: "EX" },
+      { key: "case_number_year", value: "1" },
+      { key: "case_number_digits", value: "4" },
+      { key: "case_number_next", value: "8" },
+      { key: "quote_number_prefix", value: "TIL" },
+      { key: "quote_number_year", value: "1" },
+      { key: "quote_number_digits", value: "4" },
+      { key: "quote_number_next", value: "2" },
+      { key: "invoice_number_prefix", value: "FAK" },
+      { key: "invoice_number_year", value: "1" },
+      { key: "invoice_number_digits", value: "4" },
+      { key: "invoice_number_next", value: "2" },
+      { key: "sproom_webhook_secret", value: randomBytes(24).toString("hex") },
+    ],
+  });
+
+  await prisma.mailAccount.create({
+    data: {
+      name: "Faktura",
+      address: "faktura@exempo.dk",
+      purpose: "FAKTURA",
+      smtpHost: "smtp.exempo.dk",
+      imapHost: "imap.exempo.dk",
+    },
+  });
+
+  await seedWholesalerAgreements(prisma);
+
+  await prisma.purchase.create({
+    data: {
+      source: "SPROOM",
+      externalId: "demo-stark-1",
+      supplierName: "Stark A/S",
+      supplierCvr: "17233541",
+      invoiceNumber: "SI-10482",
+      issuedAt: addDays(monday, 1),
+      netAmount: 640000,
+      vatAmount: 160000,
+      grossAmount: 800000,
+      status: "MODTAGET",
+      lines: {
+        create: [
+          { description: "Konstruktionstræ C24", quantity: 24, unitPrice: 18500, amount: 444000 },
+          { description: "Skruer og beslag", quantity: 1, unitPrice: 196000, amount: 196000 },
+        ],
+      },
+    },
+  });
+
+  await prisma.purchase.create({
+    data: {
+      source: "MANUEL",
+      externalId: "demo-ao-1",
+      supplierName: "AO Johansen",
+      supplierCvr: "58218717",
+      invoiceNumber: "452901",
+      issuedAt: addDays(monday, 2),
+      netAmount: 248000,
+      vatAmount: 62000,
+      grossAmount: 310000,
+      status: "AFVENTER",
+      caseId: sag1.id,
+      lines: {
+        create: [{ description: "Gipsplader og spartel", quantity: 1, unitPrice: 248000, amount: 248000 }],
+      },
+    },
+  });
+
+  ensureDefaultTenant("Exempo");
+  const demoUsers = await prisma.user.findMany({ select: { email: true } });
+  for (const demoUser of demoUsers) registerLogin(demoUser.email, "exempo");
 
   console.log("Seeded Exempo with", {
     users: 6,

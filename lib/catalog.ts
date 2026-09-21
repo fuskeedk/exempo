@@ -15,6 +15,7 @@ export const TRADES = [
   "MALER",
   "GULV",
   "TAG",
+  "ADMINISTRATION",
   "ANDET",
 ] as const;
 export type Trade = (typeof TRADES)[number];
@@ -27,11 +28,17 @@ export const TRADE_LABELS: Record<Trade, string> = {
   MALER: "Maler",
   GULV: "Gulv",
   TAG: "Tag",
+  ADMINISTRATION: "Administration",
   ANDET: "Andet",
 };
 
+export const CASE_TRADES = TRADES.filter((trade) => trade !== "ADMINISTRATION");
+
 export const DOCUMENT_CATEGORIES = [
+  "FØR",
+  "EFTER",
   "FOTO",
+  "UNDERSKRIFT",
   "TILBUD",
   "KLS",
   "FAKTURA",
@@ -41,7 +48,10 @@ export const DOCUMENT_CATEGORIES = [
 export type DocumentCategory = (typeof DOCUMENT_CATEGORIES)[number];
 
 export const DOCUMENT_LABELS: Record<DocumentCategory, string> = {
+  "FØR": "Før-foto",
+  EFTER: "Efter-foto",
   FOTO: "Foto",
+  UNDERSKRIFT: "Underskrift",
   TILBUD: "Tilbud",
   KLS: "KLS",
   FAKTURA: "Faktura",
@@ -91,14 +101,55 @@ export const TIME_KIND_LABELS: Record<TimeKind, string> = {
   TILLÆG: "Tillæg",
 };
 
-export const ABSENCE_TYPES = ["FERIE", "SYG", "FRI", "ANDET"] as const;
+export const ABSENCE_TYPES = ["FERIE", "FRI", "SYG", "BARNSYG", "EGEN_TID"] as const;
 export type AbsenceType = (typeof ABSENCE_TYPES)[number];
 export const ABSENCE_TYPE_LABELS: Record<AbsenceType, string> = {
   FERIE: "Ferie",
+  FRI: "Fridag",
   SYG: "Sygdom",
-  FRI: "Fri",
-  ANDET: "Andet",
+  BARNSYG: "Barnsyg",
+  EGEN_TID: "Egen tid",
 };
+
+export function isAbsenceType(value: string): value is AbsenceType {
+  return (ABSENCE_TYPES as readonly string[]).includes(value);
+}
+
+export function absenceLabel(type: string) {
+  if (isAbsenceType(type)) return ABSENCE_TYPE_LABELS[type];
+  if (type === "ANDET") return "Andet";
+  if (type === "FRAVAER") return "Fravær";
+  return type;
+}
+
+export function isAbsenceKind(kind: string) {
+  return kind === "FRAVAER" || kind === "ANDET" || isAbsenceType(kind);
+}
+
+export const BOOKING_TONES = [
+  "case-planned",
+  "case-registered",
+  "none-planned",
+  "none-registered",
+  "absence-planned",
+  "absence-registered",
+] as const;
+export type BookingTone = (typeof BOOKING_TONES)[number];
+export const BOOKING_TONE_LABELS: Record<BookingTone, string> = {
+  "case-planned": "Planlagt sag",
+  "case-registered": "Registreret sag",
+  "none-planned": "Planlagt · ikke ordrerelateret",
+  "none-registered": "Registreret · ikke ordrerelateret",
+  "absence-planned": "Planlagt fravær",
+  "absence-registered": "Registreret fravær",
+};
+
+export function activityBookingTone(kind: string, status: string, caseId?: string | null): BookingTone {
+  const registered = status === "REGISTRERET";
+  if (isAbsenceKind(kind)) return registered ? "absence-registered" : "absence-planned";
+  if (caseId) return registered ? "case-registered" : "case-planned";
+  return registered ? "none-registered" : "none-planned";
+}
 
 export const EXTRA_STATUSES = ["KLADDE", "SENDT", "GODKENDT", "AFVIST", "FAKTURERET"] as const;
 export type ExtraStatus = (typeof EXTRA_STATUSES)[number];
@@ -118,12 +169,31 @@ export const RESOURCE_TYPE_LABELS: Record<ResourceType, string> = {
   "VÆRKSTED": "Værksted",
 };
 
-export const INVOICE_KINDS = ["FAKTURA", "KREDITNOTA"] as const;
+export const INVOICE_KINDS = ["FAKTURA", "ACONTO", "KREDITNOTA"] as const;
 export type InvoiceKind = (typeof INVOICE_KINDS)[number];
 export const INVOICE_KIND_LABELS: Record<InvoiceKind, string> = {
   FAKTURA: "Faktura",
+  ACONTO: "Acontofaktura",
   KREDITNOTA: "Kreditnota",
 };
+
+export function isInvoiceKind(value: string): value is InvoiceKind {
+  return (INVOICE_KINDS as readonly string[]).includes(value);
+}
+
+export function invoiceDocumentTitle(kind: string): string {
+  if (kind === "ACONTO") return "Acontofaktura";
+  if (kind === "KREDITNOTA") return "Kreditnota";
+  return "Faktura";
+}
+
+export function canDeleteInvoice(status: string) {
+  return status === "KLADDE";
+}
+
+export function canDeleteCase(invoices: { status: string }[]) {
+  return invoices.every((invoice) => canDeleteInvoice(invoice.status));
+}
 
 export const INVOICE_STATUSES = ["KLADDE", "SENDT", "BETALT", "RYKKET", "INKASSO"] as const;
 export type InvoiceStatus = (typeof INVOICE_STATUSES)[number];
@@ -146,12 +216,38 @@ export const KLS_STATUS_LABELS: Record<KlsStatus, string> = {
   NA: "Ikke relevant",
 };
 
+export const PURCHASE_STATUSES = ["MODTAGET", "AFVENTER", "GODKENDT", "DRIFT", "AFVIST"] as const;
+export type PurchaseStatus = (typeof PURCHASE_STATUSES)[number];
+export const PURCHASE_STATUS_LABELS: Record<PurchaseStatus, string> = {
+  MODTAGET: "Ikke matchet til sag",
+  AFVENTER: "Afventer godkendelse",
+  GODKENDT: "Godkendt — belaster sag",
+  DRIFT: "Godkendt — ikke ordre-relateret",
+  AFVIST: "Afvist",
+};
+
+export const MAIL_PURPOSES = ["FAKTURA", "TILBUD", "GENEREL"] as const;
+export type MailPurpose = (typeof MAIL_PURPOSES)[number];
+export const MAIL_PURPOSE_LABELS: Record<MailPurpose, string> = {
+  FAKTURA: "Indkøbs- og salgsfaktura",
+  TILBUD: "Tilbud",
+  GENEREL: "Generel post",
+};
+
 export function isRole(value: string): value is Role {
   return (ROLES as readonly string[]).includes(value);
 }
 
 export function isTrade(value: string): value is Trade {
   return (TRADES as readonly string[]).includes(value);
+}
+
+export function isPricingMode(value: string): value is PricingMode {
+  return (PRICING_MODES as readonly string[]).includes(value);
+}
+
+export function isOrderType(value: string): value is OrderType {
+  return (ORDER_TYPES as readonly string[]).includes(value);
 }
 
 export const EMPLOYEE_COLORS = [

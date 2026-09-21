@@ -1,14 +1,25 @@
 "use server";
 
+import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireRole, requireSession } from "@/lib/auth";
+import { mailAccountFor, sendMail } from "@/lib/mail";
 import { parseKrToOre } from "@/lib/money";
-import { nextCaseNumber, nextQuoteNumber } from "@/lib/numbers";
+import { nextQuoteNumber } from "@/lib/numbers";
+import { buildQuoteEmail, isEmail, quoteEmailMessageId } from "@/lib/quote-email";
+import { fetchQuoteReplies } from "@/lib/quote-replies";
+import { convertApprovedQuoteToCase, customerQuotePath, ensureQuoteShareToken, newShareToken } from "@/lib/quotes";
+import { companyLogoAbsoluteUrl } from "@/lib/logo";
 import { prisma } from "@/lib/prisma";
+import { getSettings } from "@/lib/settings";
 
 function str(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
+}
+
+function bounce(path: string, message: string): never {
+  redirect(`${path}?besked=${encodeURIComponent(message)}`);
 }
 
 function linesFromForm(formData: FormData) {
@@ -52,6 +63,7 @@ export async function createQuoteAction(formData: FormData) {
       trade: str(formData, "trade") || "ANDET",
       pricingMode: str(formData, "pricingMode") || "FAST_PRIS",
       createdById: user.id,
+      shareToken: newShareToken(),
       validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       lines: { create: linesFromForm(formData) },
     },
@@ -64,69 +76,102 @@ export async function setQuoteStatusAction(formData: FormData) {
   await requireRole(["ADMIN", "PL"]);
   const id = str(formData, "quoteId");
   const status = str(formData, "status");
+  await ensureQuoteShareToken(id);
   await prisma.quote.update({ where: { id }, data: { status } });
   revalidatePath(`/tilbud/${id}`);
   revalidatePath("/tilbud");
 }
 
 export async function convertQuoteToCaseAction(formData: FormData) {
-  const user = await requireSession();
+  await requireSession();
   const id = str(formData, "quoteId");
+  const result = await convertApprovedQuoteToCase(id);
+  if (!result.ok) {
+    redirect(`/tilbud/${id}?besked=${encodeURIComponent(result.reason)}`);
+  }
+  revalidatePath("/sager");
+  revalidatePath("/tilbud");
+  redirect(`/sager/${result.caseId}`);
+}
+
+export async function sendQuoteEmailAction(formData: FormData) {
+  const session = await requireRole(["ADMIN", "PL"]);
+  const id = str(formData, "quoteId");
+  const path = `/tilbud/${id}`;
   const quote = await prisma.quote.findUnique({
     where: { id },
     include: { customer: true, address: true, lines: true },
   });
-  if (!quote) throw new Error("Tilbuddet findes ikke.");
-  if (quote.status !== "GODKENDT") {
-    throw new Error("Tilbuddet skal være godkendt, før det kan blive en ordre.");
+  if (!quote) bounce("/tilbud", "Tilbuddet findes ikke.");
+  if (quote.status === "GODKENDT" || quote.status === "AFVIST") {
+    bounce(path, "Tilbuddet er allerede afgjort.");
   }
-  const revenue = Math.round(
-    quote.lines.reduce((sum, line) => sum + line.quantity * line.unitPrice, 0),
-  );
-  const cost = Math.round(
-    quote.lines.reduce((sum, line) => sum + line.quantity * line.costPrice, 0),
-  );
-  const sag = await prisma.case.create({
-    data: {
-      caseNumber: await nextCaseNumber(),
-      title: quote.title,
-      description: quote.description,
-      customerId: quote.customerId,
-      addressId: quote.addressId,
-      quoteId: quote.id,
-      customerName: quote.customer.name,
-      customerAddress: quote.address?.street ?? "",
-      customerPostal: quote.address?.postal ?? "",
-      customerCity: quote.address?.city ?? "",
-      customerPhone: quote.customer.phone,
-      customerEmail: quote.customer.email,
-      trade: quote.trade,
-      pricingMode: quote.pricingMode,
-      projectLeaderId: user.id,
-      estimatedRevenue: revenue,
-      estimatedCost: cost,
-      events: {
-        create: {
-          fromState: null,
-          toState: "NY",
-          note: `Oprettet fra tilbud ${quote.quoteNumber}.`,
-          userId: user.id,
-        },
-      },
-      materials: {
-        create: quote.lines
-          .filter((line) => line.kind !== "TIMER")
-          .map((line) => ({
-            name: line.description,
-            quantity: line.quantity,
-            unitPrice: line.unitPrice,
-            costPrice: line.costPrice,
-          })),
-      },
-    },
+  const to = (str(formData, "to") || quote.customer.email).toLowerCase();
+  if (!isEmail(to)) bounce(path, "Kunden har ingen gyldig e-mail. Skriv adressen, før I sender.");
+  const profile = await mailAccountFor("TILBUD");
+  if (!profile) {
+    bounce("/indstillinger", "Tilføj en mailkonto med SMTP under Indstillinger, før I kan sende tilbudsmail.");
+  }
+
+  const shareToken = await ensureQuoteShareToken(quote.id);
+  const headerStore = await headers();
+  const host = headerStore.get("x-forwarded-host") || headerStore.get("host") || "localhost:3000";
+  const proto = headerStore.get("x-forwarded-proto") || "https";
+  const approveUrl = `${proto}://${host}${customerQuotePath(session.tenantSlug, shareToken)}`;
+  const settings = await getSettings();
+  const mail = buildQuoteEmail({
+    quoteNumber: quote.quoteNumber,
+    title: quote.title,
+    description: quote.description,
+    validUntil: quote.validUntil,
+    customerName: quote.customer.name,
+    address: quote.address,
+    lines: quote.lines,
+    companyName: settings.company_name,
+    companyEmail: settings.company_email || profile.fromEmail,
+    approveUrl,
+    logoUrl: companyLogoAbsoluteUrl(`${proto}://${host}`, session.tenantSlug, settings.company_logo),
   });
-  await prisma.quote.update({ where: { id }, data: { caseId: sag.id } });
-  revalidatePath("/sager");
+
+  const messageId = quoteEmailMessageId(quote.id, profile.fromEmail);
+  let sentId = messageId;
+  try {
+    const sent = await sendMail({
+      profile,
+      to,
+      subject: mail.subject,
+      text: mail.text,
+      html: mail.html,
+      messageId,
+    });
+    sentId = sent.messageId || messageId;
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : "Ukendt fejl";
+    bounce(path, `Tilbudsmailen kunne ikke sendes: ${reason}`);
+  }
+
+  await prisma.quote.update({
+    where: { id: quote.id },
+    data: { status: "SENDT", emailedAt: new Date(), emailedTo: to, emailedMessageId: sentId },
+  });
+  revalidatePath(path);
   revalidatePath("/tilbud");
-  redirect(`/sager/${sag.id}`);
+  bounce(path, `Tilbuddet er sendt til ${to}.`);
+}
+
+export async function fetchQuoteRepliesAction() {
+  await requireRole(["ADMIN", "PL"]);
+  const result = await fetchQuoteReplies();
+  revalidatePath("/tilbud");
+  revalidatePath("/sager");
+  if (result.errors.length && result.processed === 0) {
+    const path = result.errors[0].includes("IMAP") ? "/indstillinger" : "/tilbud";
+    bounce(path, result.errors[0]);
+  }
+  bounce(
+    "/tilbud",
+    result.processed
+      ? `Hentede ${result.processed} kundesvar${result.skipped ? ` (${result.skipped} sprunget over)` : ""}.`
+      : "Ingen nye kundesvar.",
+  );
 }

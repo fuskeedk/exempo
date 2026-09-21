@@ -1,52 +1,53 @@
-# Exempo — ordrestyring
+# Exempo
 
-Ordrestyring til håndværk i samme spor som Minuba: tilbud, arbejdssedler, planlægning, tid, materialer, KLS, faktura og dækningsgrad.
+Ordrestyring til håndværk: tilbud, arbejdssedler, planlægning, tid, materialer, KLS, faktura, løn og dækningsgrad.
 
-## Kør lokalt
+Hver virksomhed får sin egen SQLite-database. Demo-data er fiktiv og indeholder ikke kunde- eller medarbejderoplysninger fra et rigtigt firma.
+
+## Hurtig start
+
+Krav: [Node.js](https://nodejs.org/) 20 eller nyere.
 
 ```bash
+git clone https://github.com/fuskeedk/exempo.git
+cd exempo
 cp .env.example .env
 npm install
 npx prisma db push
 npx tsx prisma/seed.ts
+npm test
 npm run dev
 ```
 
-Åbn [http://localhost:3000](http://localhost:3000).
+Åbn [http://localhost:3000](http://localhost:3000) og log ind med demo-brugerne:
 
-## Windows .exe
-
-På en Windows-PC kan du køre Exempo uden at installere Node eller Git:
-
-1. Hent `Exempo-windows.zip` fra GitHub Actions på branchen (kør *Windows exe*, download artifact).
-2. Pak **hele mappen** ud.
-3. Dobbeltklik `Exempo.exe`.
-4. Log ind med `pl@exempo.dk` / `exempo123`.
-
-Byg selv:
-
-```bash
-npm run package:win
-```
-
-Zip-filen ligger i `dist/Exempo-windows.zip`. Windows kan advare om en usigneret fil — vælg *Flere oplysninger* → *Kør alligevel*.
-
-| Rolle | Login | Kode |
+| Rolle | E-mail | Kode |
 | --- | --- | --- |
-| Projektleder | pl@exempo.dk | exempo123 |
 | Administrator | admin@exempo.dk | exempo123 |
-| Tømrer (marken) | lars@exempo.dk | exempo123 |
+| Projektleder | pl@exempo.dk | exempo123 |
+| Medarbejder (marken) | lars@exempo.dk | exempo123 |
 
-## Moduler
+Skift adgangskoderne, før I bruger systemet rigtigt. Se den fulde [installationsguide](INSTALL.md).
 
-- **Overblik** — pipeline som i Minubas sagsflow
-- **Min dag** — montørens app: stopur, materialer, stregkode, foto, ekstraarbejde, fravær
-- **Tilbud** — forbrug, fast pris eller kalkulation; godkendt tilbud bliver arbejdsseddel
-- **Arbejdssedler** — FSM fra ny sag til faktura, KLS og dokumentation
-- **Planlægning** — medarbejderkalender, fravær og ressourcer (bil, lift)
-- **Kunder** — kartotek med flere adresser
-- **Varer** — eget katalog med varenr., stregkode og lager
-- **Tid** — timer, overtid og fravær
-- **Fakturaer + rykkere** — 25 % moms, kreditnota, rykker 1–3 og inkasso
-- **Serviceaftaler** — faste, tilbagevendende ordrer
-- **Dækningsgrad** — pr. sag, medarbejder og samlet (kostpris på materialer)
+## Hvad I får
+
+- **Overblik** — sager i Ordre / Igang / Faktura
+- **Tilbud** — forbrug, fast pris eller kalkulation; kunden kan svare på mail
+- **Arbejdssedler** — materialer, tid, KLS, underskrift og fotos
+- **Planlægning** — kalender, træk-og-slip, fravær og materiel
+- **Min dag** — montørens app med stopur, materialer og ekstraarbejde
+- **Faktura og rykkere** — 25 % moms, kreditnota, rykker 1–3
+- **Indkøb** — indkomne leverandørfakturaer og sag-match
+- **Løn** — timesedler, overenskomst, timeløn eller funktionær-månedsløn
+- **Dækningsgrad** — pr. sag (kun projektleder/admin)
+
+Katalog, vognlager og KLS kan slås til under Indstillinger.
+
+## Produktion og Windows
+
+- Linux-server, systemd og reverse proxy: [INSTALL.md](INSTALL.md)
+- Bærbar Windows-app: GitHub Actions-jobbet *Windows exe*, eller `npm run package:win`
+
+## Licens
+
+[MIT](LICENSE)

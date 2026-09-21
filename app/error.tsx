@@ -11,7 +11,11 @@ export default function ErrorPage({
     <div className="mx-auto max-w-lg py-16 text-center">
       <p className="text-xs uppercase tracking-[0.2em] text-muted">Fejl</p>
       <h1 className="mt-3 font-serif text-3xl">Noget gik galt</h1>
-      <p className="mt-3 text-muted">{error.message || "Prøv igen om et øjeblik."}</p>
+      <p className="mt-3 text-muted">
+        {error.message?.includes("Minified React error #441")
+          ? "Kunne ikke gemme. Tjek at alt er udfyldt, og prøv igen."
+          : error.message || "Prøv igen om et øjeblik."}
+      </p>
       <button
         type="button"
         onClick={reset}

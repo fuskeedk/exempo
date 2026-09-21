@@ -1,0 +1,20 @@
+[Unit]
+Description=Exempo Next.js
+After=network.target
+
+[Service]
+Type=simple
+User=exempo
+Group=exempo
+WorkingDirectory=/opt/exempo
+Environment=NODE_ENV=production
+Environment=PORT=3000
+Environment=HOSTNAME=127.0.0.1
+EnvironmentFile=/opt/exempo/.env
+ExecStart=/usr/bin/node /opt/exempo/node_modules/next/dist/bin/next start -H 127.0.0.1 -p 3000
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=20
+
+[Install]
+WantedBy=multi-user.target

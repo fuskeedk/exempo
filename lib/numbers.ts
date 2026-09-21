@@ -1,40 +1,65 @@
 import { prisma } from "@/lib/prisma";
+import { formatSerial } from "@/lib/serial";
+import { getSettings, setSetting } from "@/lib/settings";
 
-export async function nextCaseNumber(now = new Date()): Promise<string> {
-  const year = now.getFullYear();
-  const prefix = `EX-${year}-`;
-  const latest = await prisma.case.findFirst({
-    where: { caseNumber: { startsWith: prefix } },
-    orderBy: { caseNumber: "desc" },
-    select: { caseNumber: true },
-  });
-  const last = latest ? Number.parseInt(latest.caseNumber.slice(prefix.length), 10) : 0;
-  const next = Number.isFinite(last) ? last + 1 : 1;
-  return `${prefix}${String(next).padStart(4, "0")}`;
+type Kind = "case" | "quote" | "invoice";
+
+function keys(kind: Kind) {
+  return {
+    prefix: `${kind}_number_prefix`,
+    year: `${kind}_number_year`,
+    digits: `${kind}_number_digits`,
+    next: `${kind}_number_next`,
+  } as const;
 }
 
-export async function nextQuoteNumber(now = new Date()): Promise<string> {
-  const year = now.getFullYear();
-  const prefix = `TIL-${year}-`;
-  const latest = await prisma.quote.findFirst({
-    where: { quoteNumber: { startsWith: prefix } },
-    orderBy: { quoteNumber: "desc" },
-    select: { quoteNumber: true },
-  });
-  const last = latest ? Number.parseInt(latest.quoteNumber.slice(prefix.length), 10) : 0;
-  const next = Number.isFinite(last) ? last + 1 : 1;
-  return `${prefix}${String(next).padStart(4, "0")}`;
+async function exists(kind: Kind, value: string): Promise<boolean> {
+  if (kind === "case") return Boolean(await prisma.case.findUnique({ where: { caseNumber: value } }));
+  if (kind === "quote") return Boolean(await prisma.quote.findUnique({ where: { quoteNumber: value } }));
+  return Boolean(await prisma.invoice.findUnique({ where: { invoiceNumber: value } }));
 }
 
-export async function nextInvoiceNumber(now = new Date()): Promise<string> {
-  const year = now.getFullYear();
-  const prefix = `FAK-${year}-`;
-  const latest = await prisma.invoice.findFirst({
-    where: { invoiceNumber: { startsWith: prefix } },
-    orderBy: { invoiceNumber: "desc" },
-    select: { invoiceNumber: true },
-  });
-  const last = latest ? Number.parseInt(latest.invoiceNumber.slice(prefix.length), 10) : 0;
-  const next = Number.isFinite(last) ? last + 1 : 1;
-  return `${prefix}${String(next).padStart(4, "0")}`;
+export async function nextSerial(kind: Kind, now = new Date()): Promise<string> {
+  const settings = await getSettings();
+  const k = keys(kind);
+  const prefix = settings[k.prefix] ?? "";
+  const includeYear = settings[k.year] !== "0";
+  const digits = Number.parseInt(settings[k.digits] || "4", 10);
+  let n = Number.parseInt(settings[k.next] || "1", 10);
+  if (!Number.isFinite(n) || n < 1) n = 1;
+
+  let candidate = formatSerial({ prefix, includeYear, digits, n, year: now.getFullYear() });
+  while (await exists(kind, candidate)) {
+    n += 1;
+    candidate = formatSerial({ prefix, includeYear, digits, n, year: now.getFullYear() });
+  }
+  await setSetting(k.next, String(n + 1));
+  return candidate;
+}
+
+export function nextCaseNumber(now = new Date()) {
+  return nextSerial("case", now);
+}
+
+export function nextQuoteNumber(now = new Date()) {
+  return nextSerial("quote", now);
+}
+
+export async function peekQuoteNumber(now = new Date()) {
+  const settings = await getSettings();
+  const prefix = settings.quote_number_prefix ?? "";
+  const includeYear = settings.quote_number_year !== "0";
+  const digits = Number.parseInt(settings.quote_number_digits || "4", 10);
+  let n = Number.parseInt(settings.quote_number_next || "1", 10);
+  if (!Number.isFinite(n) || n < 1) n = 1;
+  let candidate = formatSerial({ prefix, includeYear, digits, n, year: now.getFullYear() });
+  while (await exists("quote", candidate)) {
+    n += 1;
+    candidate = formatSerial({ prefix, includeYear, digits, n, year: now.getFullYear() });
+  }
+  return candidate;
+}
+
+export function nextInvoiceNumber(now = new Date()) {
+  return nextSerial("invoice", now);
 }

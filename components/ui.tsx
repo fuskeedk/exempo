@@ -6,14 +6,16 @@ export function PageHeader({
   title,
   description,
   actions,
+  tour,
 }: {
   kicker?: string;
   title: string;
-  description?: string;
+  description?: ReactNode;
   actions?: ReactNode;
+  tour?: string;
 }) {
   return (
-    <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+    <div className="mb-8 flex flex-wrap items-end justify-between gap-4" data-tour={tour}>
       <div>
         {kicker ? (
           <p className="mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-pine-2">
@@ -31,12 +33,20 @@ export function PageHeader({
 export function Card({
   children,
   className = "",
+  id,
+  tour,
 }: {
   children: ReactNode;
   className?: string;
+  id?: string;
+  tour?: string;
 }) {
   return (
-    <section className={`rounded-2xl border border-line bg-paper-2 p-5 shadow-[0_1px_0_rgba(27,24,20,0.04)] ${className}`}>
+    <section
+      id={id}
+      data-tour={tour}
+      className={`rounded-2xl border border-line bg-paper-2 p-5 shadow-[0_1px_0_rgba(27,24,20,0.04)] ${className}`}
+    >
       {children}
     </section>
   );
@@ -73,6 +83,7 @@ export function Select(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
     <select
       {...props}
       className={`w-full rounded-xl border border-line bg-white px-3 py-2.5 text-ink outline-none ring-pine/20 focus:ring-2 ${props.className ?? ""}`}
+      style={{ color: "var(--ink)", backgroundColor: "#fff", ...props.style }}
     />
   );
 }

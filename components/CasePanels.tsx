@@ -6,39 +6,43 @@ import {
   updateCaseAction,
 } from "@/app/actions/cases";
 import { addCatalogMaterialAction } from "@/app/actions/products";
+import { AoProductSearch } from "@/components/AoProductSearch";
+import { ProductThumb, materialImageUrl } from "@/components/ProductThumb";
 import { uploadDocumentAction } from "@/app/actions/documents";
 import { createInvoiceAction } from "@/app/actions/invoices";
-import { saveKlsAction, startKlsAction } from "@/app/actions/kls";
 import { createExtraWorkAction, setExtraWorkStatusAction } from "@/app/actions/field";
 import { CoverageBadge, InvoiceBadge, PipelineDots, StatusBadge } from "@/components/StatusBadge";
+import { KlsForm, KlsStartForm } from "@/components/KlsForm";
 import { SubmitButton } from "@/components/SubmitButton";
+import { AddressAutocomplete } from "@/components/AddressAutocomplete";
 import { Card, Field, Input, Select, Textarea } from "@/components/ui";
 import type { SessionUser } from "@/lib/auth";
-import { canManageOffice } from "@/lib/auth";
+import { canManageOffice, canSeeCaseCoverage } from "@/lib/auth";
 import {
   DOCUMENT_CATEGORIES,
   DOCUMENT_LABELS,
   EXTRA_STATUS_LABELS,
-  KLS_STATUS_LABELS,
-  KLS_STATUSES,
   TIME_KIND_LABELS,
   TIME_KINDS,
   ORDER_TYPE_LABELS,
+  PRICING_MODES,
   PRICING_MODE_LABELS,
   TRADE_LABELS,
-  TRADES,
+  CASE_TRADES,
   isTrade,
 } from "@/lib/catalog";
 import type { CaseEconomics } from "@/lib/coverage";
-import { formatDateTime, toDateInput, toDateTimeInput } from "@/lib/dates";
+import { formatDateTime, toDateInput, toDateTimeInput, atTimeOnDay, dayDateTimeBounds } from "@/lib/dates";
 import {
   STATE_HELP,
   STATE_LABELS,
+  TIME_LOCKED_MESSAGE,
   allowedTransitions,
   isCaseState,
+  isTimeLocked,
   type CaseState,
 } from "@/lib/fsm";
-import { formatKr, percent } from "@/lib/money";
+import { formatKr, oreToKrInput, percent } from "@/lib/money";
 import type { Prisma } from "@prisma/client";
 
 type CaseFull = Prisma.CaseGetPayload<{
@@ -48,9 +52,10 @@ type CaseFull = Prisma.CaseGetPayload<{
     events: { include: { user: true } };
     documents: { include: { uploadedBy: true } };
     timeEntries: { include: { user: true } };
-    materials: true;
+    materials: { include: { product: true } };
     invoices: { include: { lines: true } };
     extraWorks: true;
+    purchases: true;
     klsReports: {
       include: {
         template: true;
@@ -68,9 +73,11 @@ type CatalogProduct = { id: string; sku: string; name: string; unit: string };
 export function CaseHero({
   sag,
   economics,
+  user,
 }: {
   sag: CaseFull;
   economics: CaseEconomics;
+  user: SessionUser;
 }) {
   return (
     <Card>
@@ -102,6 +109,7 @@ export function CaseHero({
             {sag.customerAddress}
             {sag.customerCity ? `, ${sag.customerPostal} ${sag.customerCity}` : ""}
           </dd>
+          {sag.customerPhone ? <dd className="text-muted">{sag.customerPhone}</dd> : null}
         </div>
         <div>
           <dt className="text-xs uppercase tracking-wider text-muted">Forsikring</dt>
@@ -115,6 +123,7 @@ export function CaseHero({
             PL: {sag.projectLeader?.name ?? "—"}
           </dd>
         </div>
+        {canSeeCaseCoverage(user, sag.projectLeaderId) ? (
         <div>
           <dt className="text-xs uppercase tracking-wider text-muted">Dækningsgrad</dt>
           <dd className="mt-1">
@@ -124,6 +133,7 @@ export function CaseHero({
             {formatKr(economics.revenue)} − {formatKr(economics.cost)}
           </dd>
         </div>
+        ) : null}
       </dl>
     </Card>
   );
@@ -131,7 +141,9 @@ export function CaseHero({
 
 export function FsmForm({ sag }: { sag: CaseFull }) {
   if (!isCaseState(sag.state)) return null;
-  const next = allowedTransitions(sag.state);
+  const next = allowedTransitions(sag.state).filter(
+    (state) => !(state === "I_GANG" && isTimeLocked(sag.state)),
+  );
   if (next.length === 0) {
     return (
       <Card>
@@ -169,7 +181,14 @@ export function CalendarAssignForm({
   employees: Employee[];
   user: SessionUser;
 }) {
-  if (!canManageOffice(user.role)) {
+  const office = canManageOffice(user.role);
+  const own = !sag.assignedToId || sag.assignedToId === user.id;
+  const day = sag.scheduledStart ?? new Date();
+  const clock = dayDateTimeBounds(day);
+  const defaultStart = sag.scheduledStart ?? atTimeOnDay(day, 8);
+  const defaultEnd = sag.scheduledEnd ?? atTimeOnDay(day, 16);
+
+  if (!office && !own) {
     return (
       <Card>
         <h2 className="font-serif text-xl">Kalender</h2>
@@ -181,11 +200,48 @@ export function CalendarAssignForm({
       </Card>
     );
   }
+
+  if (!office) {
+    return (
+      <Card>
+        <h2 className="font-serif text-xl">Book på min kalender</h2>
+        <p className="mt-1 text-sm text-muted">Sæt start og slut mellem 00:00 og 23:59, så sagen ligger på din dag.</p>
+        <form action={assignCaseToCalendarAction} className="mt-4 grid gap-3 sm:grid-cols-2">
+          <input type="hidden" name="caseId" value={sag.id} />
+          <input type="hidden" name="assignedToId" value={user.id} />
+          <Field label="Start">
+            <Input
+              type="datetime-local"
+              name="scheduledStart"
+              required
+              min={clock.min}
+              max={clock.max}
+              step={60}
+              defaultValue={toDateTimeInput(defaultStart)}
+            />
+          </Field>
+          <Field label="Slut">
+            <Input
+              type="datetime-local"
+              name="scheduledEnd"
+              required
+              min={clock.min}
+              max={clock.max}
+              step={60}
+              defaultValue={toDateTimeInput(defaultEnd)}
+            />
+          </Field>
+          <SubmitButton>Book på mig</SubmitButton>
+        </form>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <h2 className="font-serif text-xl">Læg i kalender</h2>
       <p className="mt-1 text-sm text-muted">
-        PL tildeler sagen til en medarbejder. Ny/besigtigelse bliver automatisk planlagt.
+        PL tildeler sagen til en medarbejder. Ny/besigtigelse bliver automatisk planlagt. Klokken går fra 00:00 til 23:59.
       </p>
       <form action={assignCaseToCalendarAction} className="mt-4 grid gap-3">
         <input type="hidden" name="caseId" value={sag.id} />
@@ -206,7 +262,10 @@ export function CalendarAssignForm({
               type="datetime-local"
               name="scheduledStart"
               key={sag.scheduledStart?.toISOString() ?? "start"}
-              defaultValue={sag.scheduledStart ? toDateTimeInput(sag.scheduledStart) : ""}
+              defaultValue={sag.scheduledStart ? toDateTimeInput(sag.scheduledStart) : toDateTimeInput(defaultStart)}
+              min={clock.min}
+              max={clock.max}
+              step={60}
               required
             />
           </Field>
@@ -215,7 +274,10 @@ export function CalendarAssignForm({
               type="datetime-local"
               name="scheduledEnd"
               key={sag.scheduledEnd?.toISOString() ?? "end"}
-              defaultValue={sag.scheduledEnd ? toDateTimeInput(sag.scheduledEnd) : ""}
+              defaultValue={sag.scheduledEnd ? toDateTimeInput(sag.scheduledEnd) : toDateTimeInput(defaultEnd)}
+              min={clock.min}
+              max={clock.max}
+              step={60}
               required
             />
           </Field>
@@ -283,90 +345,34 @@ export function KlsPanel({
   const report = sag.klsReports[0];
   if (!report) {
     return (
-      <Card>
-        <h2 className="font-serif text-xl">KLS</h2>
-        <p className="mt-1 text-sm text-muted">
-          Start en kvalitetsledelses-tjekliste. Når den er underskrevet, kan sagen faktureres.
-        </p>
-        <form action={startKlsAction} className="mt-4 flex flex-wrap gap-3">
-          <input type="hidden" name="caseId" value={sag.id} />
-          <Select
-            name="templateId"
-            className="max-w-md"
-            defaultValue={
-              templates.find((template) => template.trade === sag.trade)?.id ?? templates[0]?.id
-            }
-          >
-            {templates.map((template) => (
-              <option key={template.id} value={template.id}>
-                {template.name}
-              </option>
-            ))}
-          </Select>
-          <SubmitButton>Start KLS</SubmitButton>
-        </form>
-      </Card>
+      <KlsStartForm
+        caseId={sag.id}
+        trade={sag.trade}
+        templates={templates.map((template) => ({
+          id: template.id,
+          name: template.name,
+          trade: template.trade,
+        }))}
+      />
     );
   }
 
   return (
-    <Card>
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h2 className="font-serif text-xl">KLS</h2>
-          <p className="text-sm text-muted">{report.template.name}</p>
-        </div>
-        {report.signedAt ? (
-          <span className="tone-green rounded-full px-3 py-1 text-xs font-semibold">
-            Underskrevet {formatDateTime(report.signedAt)}
-            {report.signedBy ? ` af ${report.signedBy.name}` : ""}
-          </span>
-        ) : (
-          <span className="tone-amber rounded-full px-3 py-1 text-xs font-semibold">Kladde</span>
-        )}
-      </div>
-      <form action={saveKlsAction} className="mt-4 space-y-4">
-        <input type="hidden" name="reportId" value={report.id} />
-        <input type="hidden" name="caseId" value={sag.id} />
-        {report.checks
-          .slice()
-          .sort((a, b) => a.item.sortOrder - b.item.sortOrder)
-          .map((check) => (
-            <div key={check.id} className="grid gap-2 rounded-xl border border-line p-3 sm:grid-cols-[1fr_160px]">
-              <p className="text-sm font-medium">{check.item.label}</p>
-              <Select name={`status-${check.id}`} defaultValue={check.status}>
-                {KLS_STATUSES.map((status) => (
-                  <option key={status} value={status}>
-                    {KLS_STATUS_LABELS[status]}
-                  </option>
-                ))}
-              </Select>
-              <Input
-                name={`comment-${check.id}`}
-                defaultValue={check.comment}
-                placeholder="Kommentar / afvigelse"
-                className="sm:col-span-2"
-              />
-            </div>
-          ))}
-        <Field label="Noter">
-          <Textarea name="notes" defaultValue={report.notes} rows={3} />
-        </Field>
-        <div className="flex flex-wrap gap-3">
-          <SubmitButton>Gem KLS</SubmitButton>
-          {!report.signedAt ? (
-            <button
-              type="submit"
-              name="sign"
-              value="1"
-              className="inline-flex items-center justify-center rounded-full border border-pine bg-pine px-4 py-2.5 text-sm font-semibold text-white"
-            >
-              Underskriv og gør klar til faktura
-            </button>
-          ) : null}
-        </div>
-      </form>
-    </Card>
+    <KlsForm
+      caseId={sag.id}
+      reportId={report.id}
+      templateName={report.template.name}
+      signedAt={report.signedAt?.toISOString() ?? null}
+      signedByName={report.signedBy?.name ?? null}
+      notes={report.notes}
+      checks={report.checks.map((check) => ({
+        id: check.id,
+        status: check.status,
+        comment: check.comment,
+        label: check.item.label,
+        sortOrder: check.item.sortOrder,
+      }))}
+    />
   );
 }
 
@@ -383,6 +389,7 @@ export function EconomyPanel({
 }) {
   return (
     <div className="grid gap-6 lg:grid-cols-2">
+      {canSeeCaseCoverage(user, sag.projectLeaderId) ? (
       <Card>
         <h2 className="font-serif text-xl">Dækningsgrad</h2>
         <dl className="mt-4 space-y-2 text-sm">
@@ -402,24 +409,30 @@ export function EconomyPanel({
             : "Baseret på sendte/betalte fakturaer."}
         </p>
       </Card>
+      ) : null}
       <Card>
         <h2 className="font-serif text-xl">Tid og materialer</h2>
-        <form action={addTimeEntryAction} className="mt-4 grid gap-3 sm:grid-cols-4">
-          <input type="hidden" name="caseId" value={sag.id} />
-          <Input name="hours" placeholder="Timer" required />
-          <Input type="date" name="date" defaultValue={toDateInput(new Date())} required />
-          <Select name="kind" defaultValue="ARBEJDE">
-            {TIME_KINDS.map((kind) => (
-              <option key={kind} value={kind}>
-                {TIME_KIND_LABELS[kind]}
-              </option>
-            ))}
-          </Select>
-          <Input name="note" placeholder="Note" />
-          <div className="sm:col-span-4">
-            <SubmitButton>Registrér tid</SubmitButton>
-          </div>
-        </form>
+        {isTimeLocked(sag.state) ? (
+          <p className="mt-4 text-sm text-muted">{TIME_LOCKED_MESSAGE}</p>
+        ) : (
+          <form action={addTimeEntryAction} className="mt-4 grid gap-3 sm:grid-cols-4">
+            <input type="hidden" name="caseId" value={sag.id} />
+            <Input name="hours" placeholder="Timer" required />
+            <Input type="date" name="date" defaultValue={toDateInput(new Date())} required />
+            <Select name="kind" defaultValue="ARBEJDE">
+              {TIME_KINDS.map((kind) => (
+                <option key={kind} value={kind}>
+                  {TIME_KIND_LABELS[kind]}
+                </option>
+              ))}
+            </Select>
+            <Input name="note" placeholder="Note" />
+            <div className="sm:col-span-4">
+              <SubmitButton>Registrér tid</SubmitButton>
+            </div>
+          </form>
+        )}
+        <AoProductSearch caseId={sag.id} />
         {products.length > 0 ? (
           <form action={addCatalogMaterialAction} className="mt-4 grid gap-3 sm:grid-cols-[1fr_100px_auto]">
             <input type="hidden" name="caseId" value={sag.id} />
@@ -454,9 +467,12 @@ export function EconomyPanel({
             </li>
           ))}
           {sag.materials.map((material) => (
-            <li key={material.id} className="flex justify-between gap-3">
-              <span>
-                {material.name} × {material.quantity}
+            <li key={material.id} className="flex items-center justify-between gap-3">
+              <span className="flex min-w-0 items-center gap-2">
+                <ProductThumb src={materialImageUrl(material)} name={material.name} size={32} />
+                <span className="truncate">
+                  {material.name} × {material.quantity}
+                </span>
               </span>
               <span>{formatKr(Math.round(material.quantity * material.unitPrice))}</span>
             </li>
@@ -468,7 +484,7 @@ export function EconomyPanel({
             <SubmitButton>Dan faktura</SubmitButton>
           </form>
         ) : null}
-        {sag.invoices.length > 0 ? (
+        {canManageOffice(user.role) && sag.invoices.length > 0 ? (
           <ul className="mt-4 space-y-2 text-sm">
             {sag.invoices.map((invoice) => (
               <li key={invoice.id} className="flex items-center justify-between">
@@ -558,17 +574,17 @@ export function StamdataForm({ sag, user }: { sag: CaseFull; user: SessionUser }
         <Field label="Kunde">
           <Input name="customerName" defaultValue={sag.customerName} />
         </Field>
-        <Field label="Adresse">
-          <Input name="customerAddress" defaultValue={sag.customerAddress} />
-        </Field>
-        <Field label="Postnr.">
-          <Input name="customerPostal" defaultValue={sag.customerPostal} />
-        </Field>
-        <Field label="By">
-          <Input name="customerCity" defaultValue={sag.customerCity} />
-        </Field>
+        <AddressAutocomplete
+          streetName="customerAddress"
+          postalName="customerPostal"
+          cityName="customerCity"
+          streetRequired
+          defaultStreet={sag.customerAddress}
+          defaultPostal={sag.customerPostal}
+          defaultCity={sag.customerCity}
+        />
         <Field label="Telefon">
-          <Input name="customerPhone" defaultValue={sag.customerPhone} />
+          <Input name="customerPhone" type="tel" inputMode="tel" defaultValue={sag.customerPhone} />
         </Field>
         <Field label="E-mail">
           <Input name="customerEmail" defaultValue={sag.customerEmail} />
@@ -581,18 +597,27 @@ export function StamdataForm({ sag, user }: { sag: CaseFull; user: SessionUser }
         </Field>
         <Field label="Fag">
           <Select name="trade" defaultValue={sag.trade}>
-            {TRADES.map((trade) => (
+            {CASE_TRADES.map((trade) => (
               <option key={trade} value={trade}>
                 {TRADE_LABELS[trade]}
               </option>
             ))}
           </Select>
         </Field>
-        <Field label="Estimeret omsætning">
-          <Input name="estimatedRevenue" defaultValue={String(sag.estimatedRevenue / 100)} />
+        <Field label="Prisform">
+          <Select name="pricingMode" defaultValue={sag.pricingMode}>
+            {PRICING_MODES.map((mode) => (
+              <option key={mode} value={mode}>
+                {PRICING_MODE_LABELS[mode]}
+              </option>
+            ))}
+          </Select>
         </Field>
-        <Field label="Estimeret omkostning">
-          <Input name="estimatedCost" defaultValue={String(sag.estimatedCost / 100)} />
+        <Field label={sag.pricingMode === "FAST_PRIS" ? "Aftalt beløb, kr." : "Estimeret omsætning, kr."}>
+          <Input name="estimatedRevenue" inputMode="decimal" defaultValue={oreToKrInput(sag.estimatedRevenue)} />
+        </Field>
+        <Field label="Estimeret omkostning, kr.">
+          <Input name="estimatedCost" inputMode="decimal" defaultValue={oreToKrInput(sag.estimatedCost)} />
         </Field>
         <div className="sm:col-span-2">
           <Field label="Beskrivelse">

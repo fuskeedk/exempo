@@ -1,8 +1,9 @@
 import Link from "next/link";
+import { Flash } from "@/components/Flash";
 import { CoverageBadge, StatusBadge } from "@/components/StatusBadge";
-import { Card, PageHeader, PrimaryLink, Select } from "@/components/ui";
-import { canManageOffice, requireSession } from "@/lib/auth";
-import { TRADE_LABELS, isTrade } from "@/lib/catalog";
+import { Card, PageHeader, Select } from "@/components/ui";
+import { canManageOffice, canSeeCaseCoverage, requireSession } from "@/lib/auth";
+import { CASE_TRADES, TRADE_LABELS } from "@/lib/catalog";
 import { caseEconomics } from "@/lib/coverage";
 import { CASE_STATES, STATE_LABELS, isCaseState } from "@/lib/fsm";
 import { prisma } from "@/lib/prisma";
@@ -10,10 +11,10 @@ import { prisma } from "@/lib/prisma";
 export default async function CasesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ state?: string; q?: string }>;
+  searchParams: Promise<{ state?: string; q?: string; besked?: string }>;
 }) {
   const user = await requireSession();
-  const { state, q } = await searchParams;
+  const { state, q, besked } = await searchParams;
   const office = canManageOffice(user.role);
 
   const cases = await prisma.case.findMany({
@@ -48,8 +49,9 @@ export default async function CasesPage({
         kicker="Sager"
         title="Alle sager"
         description="Opret, filtrér og følg sager gennem FSM-statusserne."
-        actions={office ? <PrimaryLink href="/sager/ny">Opret sag</PrimaryLink> : null}
+        tour="tour-page"
       />
+      <Flash message={besked} />
       <form className="mb-6 flex flex-wrap gap-3">
         <input
           name="q"
@@ -77,7 +79,7 @@ export default async function CasesPage({
               <th className="px-5 py-3">Kunde / sted</th>
               <th className="px-5 py-3">Medarbejder</th>
               <th className="px-5 py-3">Status</th>
-              <th className="px-5 py-3">DG</th>
+              {office ? <th className="px-5 py-3">DG</th> : null}
             </tr>
           </thead>
           <tbody>
@@ -101,9 +103,15 @@ export default async function CasesPage({
                   <td className="px-5 py-3">
                     <StatusBadge state={sag.state} />
                   </td>
-                  <td className="px-5 py-3">
-                    <CoverageBadge value={economics.coverage} />
-                  </td>
+                  {office ? (
+                    <td className="px-5 py-3">
+                      {canSeeCaseCoverage(user, sag.projectLeaderId) ? (
+                        <CoverageBadge value={economics.coverage} />
+                      ) : (
+                        <span className="text-muted">—</span>
+                      )}
+                    </td>
+                  ) : null}
                 </tr>
               );
             })}
@@ -114,8 +122,7 @@ export default async function CasesPage({
         ) : null}
       </Card>
       <p className="mt-3 text-xs text-muted">
-        Fag: {Object.values(TRADE_LABELS).join(" · ")}
-        {cases[0] && isTrade(cases[0].trade) ? "" : ""}
+        Fag: {CASE_TRADES.map((trade) => TRADE_LABELS[trade]).join(" · ")}
       </p>
     </>
   );

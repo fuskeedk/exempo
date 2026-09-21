@@ -42,7 +42,11 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# app data
+# app data (never commit live tenant databases or uploads)
+/data
 /prisma/*.db
 /prisma/*.db-journal
+*.db
+*.db-journal
 /uploads
+platform.json

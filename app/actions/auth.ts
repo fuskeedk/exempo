@@ -5,7 +5,23 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { SESSION_COOKIE, signSession } from "@/lib/auth";
 import { isRole } from "@/lib/catalog";
-import { prisma } from "@/lib/prisma";
+import {
+  defaultTenantSlug,
+  ensureDefaultTenant,
+  lookupLogin,
+  readPlatform,
+  registerLogin,
+} from "@/lib/platform";
+import { enterTenant, tenantPrisma } from "@/lib/prisma";
+
+async function bootstrapDefaultLogins() {
+  ensureDefaultTenant();
+  const platform = readPlatform();
+  if (Object.keys(platform.logins).length > 0) return;
+  const slug = defaultTenantSlug();
+  const users = await tenantPrisma(slug).user.findMany({ select: { email: true } });
+  for (const user of users) registerLogin(user.email, slug);
+}
 
 export async function loginAction(formData: FormData) {
   const email = String(formData.get("email") ?? "")
@@ -16,8 +32,15 @@ export async function loginAction(formData: FormData) {
     redirect("/login?error=Udfyld%20e-mail%20og%20adgangskode.");
   }
 
-  const user = await prisma.user.findUnique({ where: { email } });
-  if (!user || !user.active) {
+  await bootstrapDefaultLogins();
+  const mapped = lookupLogin(email);
+  let slug = mapped ?? defaultTenantSlug();
+  let user = await tenantPrisma(slug).user.findUnique({ where: { email } });
+  if (!user?.active && !mapped) {
+    slug = defaultTenantSlug();
+    user = await tenantPrisma(slug).user.findUnique({ where: { email } });
+  }
+  if (!user?.active) {
     redirect("/login?error=Forkert%20e-mail%20eller%20adgangskode.");
   }
 
@@ -26,11 +49,15 @@ export async function loginAction(formData: FormData) {
     redirect("/login?error=Forkert%20e-mail%20eller%20adgangskode.");
   }
 
+  enterTenant(slug);
+  registerLogin(user.email, slug);
+
   const token = await signSession({
     id: user.id,
     name: user.name,
     email: user.email,
     role: user.role,
+    tenantSlug: slug,
   });
 
   const store = await cookies();
@@ -47,6 +74,12 @@ export async function loginAction(formData: FormData) {
 
 export async function logoutAction() {
   const store = await cookies();
-  store.delete(SESSION_COOKIE);
+  store.set(SESSION_COOKIE, "", {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.COOKIE_SECURE === "1",
+    path: "/",
+    maxAge: 0,
+  });
   redirect("/login");
 }

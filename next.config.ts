@@ -9,6 +9,9 @@ const nextConfig: NextConfig = {
       bodySizeLimit: "20mb",
     },
   },
+  async redirects() {
+    return [{ source: "/tid", destination: "/min-dag", permanent: false }];
+  },
 };
 
 export default nextConfig;

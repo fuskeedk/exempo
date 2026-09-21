@@ -2,7 +2,7 @@ import { createAgreementAction, spawnAgreementCaseAction } from "@/app/actions/f
 import { SubmitButton } from "@/components/SubmitButton";
 import { Card, Field, Input, PageHeader, Select, Textarea } from "@/components/ui";
 import { requireRole } from "@/lib/auth";
-import { TRADE_LABELS, TRADES } from "@/lib/catalog";
+import { TRADE_LABELS, CASE_TRADES } from "@/lib/catalog";
 import { formatDate, toDateInput } from "@/lib/dates";
 import { formatKr } from "@/lib/money";
 import { prisma } from "@/lib/prisma";
@@ -57,7 +57,7 @@ export default async function AgreementsPage() {
             </Field>
             <Field label="Fag">
               <Select name="trade" defaultValue="VVS">
-                {TRADES.map((trade) => (
+                {CASE_TRADES.map((trade) => (
                   <option key={trade} value={trade}>
                     {TRADE_LABELS[trade]}
                   </option>

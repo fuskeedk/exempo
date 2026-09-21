@@ -1,13 +1,20 @@
 import Link from "next/link";
-import { Card, PageHeader, PrimaryLink } from "@/components/ui";
-import { canManageOffice, requireSession } from "@/lib/auth";
+import { fetchQuoteRepliesAction } from "@/app/actions/quotes";
+import { Flash } from "@/components/Flash";
+import { SubmitButton } from "@/components/SubmitButton";
+import { Card, PageHeader } from "@/components/ui";
+import { requireRole } from "@/lib/auth";
 import { PRICING_MODE_LABELS, QUOTE_STATUS_LABELS, type PricingMode, type QuoteStatus } from "@/lib/catalog";
 import { formatKr } from "@/lib/money";
 import { prisma } from "@/lib/prisma";
 
-export default async function QuotesPage() {
-  const user = await requireSession();
-  const office = canManageOffice(user.role);
+export default async function QuotesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ besked?: string }>;
+}) {
+  await requireRole(["ADMIN", "PL"]);
+  const { besked } = await searchParams;
   const quotes = await prisma.quote.findMany({
     include: { customer: true, lines: true },
     orderBy: { createdAt: "desc" },
@@ -17,9 +24,14 @@ export default async function QuotesPage() {
       <PageHeader
         kicker="Salg"
         title="Tilbud"
-        description="Opret tilbud efter forbrug, fast pris eller kalkulation — og omdan godkendte tilbud til arbejdssedler."
-        actions={office ? <PrimaryLink href="/tilbud/ny">Nyt tilbud</PrimaryLink> : null}
+        description="Kunden kan godkende via kundelink eller ved at svare Godkendt / Nej tak på tilbudsmailen."
+        actions={
+          <form action={fetchQuoteRepliesAction}>
+            <SubmitButton variant="secondary">Hent kundesvar</SubmitButton>
+          </form>
+        }
       />
+      <Flash message={besked} />
       <Card className="overflow-x-auto p-0">
         <table className="w-full text-left text-sm">
           <thead className="text-xs uppercase tracking-wider text-muted">

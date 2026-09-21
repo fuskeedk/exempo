@@ -21,8 +21,11 @@
     "@prisma/client": "^6",
     "bcryptjs": "^3",
     "date-fns": "^4",
+    "imapflow": "^2.0.5",
     "jose": "^6",
+    "mailparser": "^3.9.28",
     "next": "16.3.5",
+    "nodemailer": "^10.0.10",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "zod": "^4"
@@ -30,7 +33,9 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/bcryptjs": "^2",
+    "@types/mailparser": "^3.4.6",
     "@types/node": "^20",
+    "@types/nodemailer": "^8.0.2",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",

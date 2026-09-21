@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { Fraunces, Outfit } from "next/font/google";
 import "./globals.css";
@@ -16,6 +16,12 @@ const outfit = Outfit({
 export const metadata: Metadata = {
   title: "Exempo — Ordrestyring",
   description: "Ordrestyring til håndværk: tilbud, arbejdssedler, planlægning, KLS, faktura og dækningsgrad.",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

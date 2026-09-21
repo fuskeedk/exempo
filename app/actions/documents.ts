@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { requireSession } from "@/lib/auth";
 import { DOCUMENT_CATEGORIES, type DocumentCategory } from "@/lib/catalog";
 import { prisma } from "@/lib/prisma";
@@ -19,16 +20,18 @@ export async function uploadDocumentAction(formData: FormData) {
   )
     ? (categoryRaw as DocumentCategory)
     : "ANDET";
+  const extraWorkId = String(formData.get("extraWorkId") ?? "").trim();
+  const signerName = String(formData.get("signerName") ?? "").trim();
+  const back = caseId ? `/sager/${caseId}` : "/min-dag";
   const file = formData.get("file");
   if (!(file instanceof File) || file.size === 0) {
-    throw new Error("Vælg en fil.");
+    redirect(`${back}?besked=${encodeURIComponent("Vælg en fil.")}`);
   }
   if (file.size > 15 * 1024 * 1024) {
-    throw new Error("Filen må højst være 15 MB.");
+    redirect(`${back}?besked=${encodeURIComponent("Filen må højst være 15 MB.")}`);
   }
-
   await mkdir(UPLOAD_DIR, { recursive: true });
-  const ext = path.extname(file.name).slice(0, 12);
+  const ext = path.extname(file.name).slice(0, 12) || (file.type.includes("png") ? ".png" : "");
   const filename = `${randomUUID()}${ext}`;
   const buffer = Buffer.from(await file.arrayBuffer());
   await writeFile(path.join(UPLOAD_DIR, filename), buffer);
@@ -37,7 +40,7 @@ export async function uploadDocumentAction(formData: FormData) {
     data: {
       caseId,
       filename,
-      originalName: file.name,
+      originalName: signerName ? `Underskrift ${signerName}.png` : file.name,
       mimeType: file.type || "application/octet-stream",
       size: file.size,
       category,
@@ -45,5 +48,16 @@ export async function uploadDocumentAction(formData: FormData) {
     },
   });
 
+  if (extraWorkId && signerName) {
+    const extra = await prisma.extraWork.findFirst({ where: { id: extraWorkId, caseId } });
+    if (extra) {
+      await prisma.extraWork.update({
+        where: { id: extraWorkId },
+        data: { status: "GODKENDT", signedName: signerName, signedAt: new Date() },
+      });
+    }
+  }
+
   revalidatePath(`/sager/${caseId}`);
+  revalidatePath("/min-dag");
 }

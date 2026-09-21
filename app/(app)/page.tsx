@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { CoverageBadge, StatusBadge } from "@/components/StatusBadge";
-import { Card, PageHeader, PrimaryLink } from "@/components/ui";
-import { canManageOffice, requireSession } from "@/lib/auth";
+import { Card, PageHeader } from "@/components/ui";
+import { canManageOffice, canSeeCaseCoverage, requireSession } from "@/lib/auth";
 import { TRADE_LABELS, isTrade } from "@/lib/catalog";
 import { caseEconomics, rollupEconomics } from "@/lib/coverage";
 import { ACTIVE_PIPELINE, STATE_LABELS, type CaseState } from "@/lib/fsm";
@@ -27,7 +27,8 @@ export default async function DashboardPage() {
     sag,
     economics: caseEconomics(sag),
   }));
-  const totals = rollupEconomics(rows.map((row) => row.economics));
+  const coverageRows = rows.filter((row) => canSeeCaseCoverage(user, row.sag.projectLeaderId));
+  const totals = rollupEconomics(coverageRows.map((row) => row.economics));
   const open = cases.filter((sag) => !["AFSLUTTET", "ANNULLERET"].includes(sag.state));
 
   const [openQuotes, pendingExtra, overdueInvoices] = office
@@ -54,18 +55,27 @@ export default async function DashboardPage() {
       <PageHeader
         kicker="Overblik"
         title={office ? "Ordrer i pipeline" : "Dine arbejdssedler"}
-        description="Fra tilbud og nye sager til udførelse, KLS og faktura — samme flow som i Minuba."
-        actions={office ? <PrimaryLink href="/sager/ny">Ny sag</PrimaryLink> : null}
+        description="Fra tilbud og nye sager til udførelse og faktura — KLS kun hvis I selv tilføjer det."
+        tour="tour-page"
       />
 
       <div className="mb-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Stat label="Åbne sager" value={String(open.length)} />
-        <Stat label="Omsætning" value={formatKr(totals.revenue)} hint={totals.usingEstimate ? "Inkl. estimater" : "Faktureret"} />
-        <Stat label="Direkte omkostninger" value={formatKr(totals.cost)} />
-        <Stat
-          label="Dækningsgrad"
-          value={totals.coverage === null ? "—" : `${(Math.round(totals.coverage * 1000) / 10).toString().replace(".", ",")} %`}
-        />
+        {office ? (
+          <>
+            <Stat
+              label="Omsætning"
+              value={formatKr(totals.revenue)}
+              hint={user.role === "PL" ? "Dine projekter" : totals.usingEstimate ? "Inkl. estimater" : "Faktureret"}
+            />
+            <Stat label="Direkte omkostninger" value={formatKr(totals.cost)} />
+            <Stat
+              label="Dækningsgrad"
+              value={totals.coverage === null ? "—" : `${(Math.round(totals.coverage * 1000) / 10).toString().replace(".", ",")} %`}
+              hint={user.role === "PL" ? "På dine projekter" : undefined}
+            />
+          </>
+        ) : null}
       </div>
 
       {office ? (
@@ -82,7 +92,7 @@ export default async function DashboardPage() {
         </div>
       ) : null}
 
-      <div className="mb-8 overflow-x-auto pb-2">
+      <div className="mb-8 overflow-x-auto pb-2" data-tour="tour-pipeline">
         <div className="flex min-w-[1100px] gap-3">
           {columns.map((column) => (
             <div key={column.state} className="w-44 shrink-0 rounded-2xl bg-[#efe8da] p-3">
@@ -122,7 +132,7 @@ export default async function DashboardPage() {
                 <th className="pb-2">Kunde</th>
                 <th className="pb-2">Fag</th>
                 <th className="pb-2">Status</th>
-                <th className="pb-2">DG</th>
+                {office ? <th className="pb-2">DG</th> : null}
               </tr>
             </thead>
             <tbody>
@@ -139,9 +149,15 @@ export default async function DashboardPage() {
                   <td>
                     <StatusBadge state={sag.state} />
                   </td>
-                  <td>
-                    <CoverageBadge value={economics.coverage} />
-                  </td>
+                  {office ? (
+                    <td>
+                      {canSeeCaseCoverage(user, sag.projectLeaderId) ? (
+                        <CoverageBadge value={economics.coverage} />
+                      ) : (
+                        <span className="text-muted">—</span>
+                      )}
+                    </td>
+                  ) : null}
                 </tr>
               ))}
             </tbody>

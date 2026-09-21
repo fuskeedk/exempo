@@ -31,7 +31,12 @@ export function InvoiceBadge({ status, kind }: { status: string; kind?: string }
             : status === "INKASSO"
               ? "Inkasso"
               : status;
-  const label = kind === "KREDITNOTA" ? `Kreditnota · ${statusLabel}` : statusLabel;
+  const label =
+    kind === "KREDITNOTA"
+      ? `Kreditnota · ${statusLabel}`
+      : kind === "ACONTO"
+        ? `Aconto · ${statusLabel}`
+        : statusLabel;
   return (
     <span className={`${invoiceTone[status] ?? "tone-stone"} inline-flex rounded-full px-2.5 py-1 text-xs font-semibold`}>
       {label}
@@ -48,6 +53,40 @@ export function CoverageBadge({ value }: { value: number | null }) {
   return (
     <span className={`${tone} inline-flex rounded-full px-2.5 py-1 text-xs font-semibold`}>
       {String(pct).replace(".", ",")} %
+    </span>
+  );
+}
+
+export function PurchaseBadge({ status }: { status: string }) {
+  const tone =
+    status === "GODKENDT"
+      ? "tone-green"
+      : status === "AFVENTER"
+        ? "tone-amber"
+        : status === "DELVIST"
+          ? "tone-indigo"
+          : status === "AFVIST"
+            ? "tone-rose"
+            : status === "DRIFT"
+              ? "tone-sky"
+              : "tone-stone";
+  const label =
+    status === "MODTAGET"
+      ? "Ny"
+      : status === "DELVIST"
+        ? "Delvist"
+        : status === "AFVENTER"
+          ? "Afventer"
+          : status === "GODKENDT"
+            ? "Godkendt"
+            : status === "DRIFT"
+              ? "Drift"
+              : status === "AFVIST"
+                ? "Afvist"
+                : status;
+  return (
+    <span className={`${tone} inline-flex rounded-full px-2.5 py-1 text-xs font-semibold`}>
+      {label}
     </span>
   );
 }

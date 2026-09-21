@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createReminderAction } from "@/app/actions/field";
+import { AdminTabs } from "@/components/AdminTabs";
 import { InvoiceBadge } from "@/components/StatusBadge";
 import { SubmitButton } from "@/components/SubmitButton";
 import { Card, PageHeader } from "@/components/ui";
@@ -19,10 +20,11 @@ export default async function RemindersPage() {
   return (
     <>
       <PageHeader
-        kicker="Debitor"
+        kicker="Administration"
         title="Rykkere og inkasso"
         description="Send 1., 2. og 3. rykker. Tredje rykker sætter fakturaen i inkasso."
       />
+      <AdminTabs />
       <div className="space-y-4">
         {invoices.map((invoice) => {
           const net = invoiceNet(invoice.lines);
