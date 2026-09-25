@@ -1,30 +1,32 @@
-import type { DayPayload, ExtraWork, Job } from "./types";
+import type { CaseDetail, DayPayload, ExtraWork, Job } from "./types";
 
 const jobs: Job[] = [
   {
     id: "demo-1",
     caseNumber: "EX-2026-0004",
     title: "Køkkenrenovering — Nørrebro",
+    description: "Nyt køkken, gips og maling.",
     state: "I_GANG",
     stateLabel: "I gang",
     customerName: "Maja Holm",
     address: "Jægersborggade 12, 2200 København N",
     phone: "20112233",
     scheduledStart: new Date().toISOString(),
-    extraWorks: [
-      { id: "xw-1", title: "Ekstra stikkontakt", amount: 185000, status: "SENDT" },
-    ],
+    scheduledEnd: new Date(Date.now() + 4 * 36e5).toISOString(),
+    extraWorks: [{ id: "xw-1", title: "Ekstra stikkontakt", amount: 185000, status: "SENDT" }],
   },
   {
     id: "demo-2",
     caseNumber: "EX-2026-0002",
     title: "Tagrender — Hellerup",
+    description: "Rens og reparation.",
     state: "PLANLAGT",
     stateLabel: "Planlagt",
     customerName: "Hellerup Villa ApS",
     address: "Strandvejen 188, 2900 Hellerup",
     phone: "39664411",
     scheduledStart: new Date().toISOString(),
+    scheduledEnd: new Date(Date.now() + 3 * 36e5).toISOString(),
     extraWorks: [],
   },
 ];
@@ -46,12 +48,39 @@ export function demoDay(): DayPayload {
       { id: "p2", sku: "FUG-01", name: "Fugemasse hvid", barcode: "5701234560002", unit: "stk" },
       { id: "p3", sku: "MAL-10", name: "Vægmaling 10 L", barcode: "5701234560004", unit: "stk" },
     ],
+    klsTemplates: [{ id: "t1", name: "Tømrer — udførelse", trade: "TOMRER" }],
     jobs: jobs.map((job) => ({ ...job, extraWorks: [...job.extraWorks] })),
+    cases: jobs.map((job) => ({ ...job, extraWorks: [...job.extraWorks] })),
+    timeEntries: [
+      { id: "te-1", caseId: "demo-1", caseNumber: "EX-2026-0004", hours: 6, kind: "ARBEJDE", note: "Opstart", date: new Date().toISOString() },
+    ],
+    absences: [],
+  };
+}
+
+export function demoCase(id: string): CaseDetail {
+  const job = jobs.find((item) => item.id === id) ?? jobs[0];
+  return {
+    job,
+    nextStates:
+      job.state === "PLANLAGT"
+        ? [{ id: "I_GANG", label: "I gang" }]
+        : job.state === "I_GANG"
+          ? [{ id: "KLS", label: "KLS" }]
+          : [],
+    materials: [{ id: "m1", name: "Gipsplade 13 mm", sku: "GIPS-13", quantity: 4 }],
+    timeEntries: [
+      { id: "te-1", hours: 6, kind: "ARBEJDE", note: "Opstart", date: new Date().toISOString(), userName: "Lars Nielsen" },
+    ],
+    documents: [],
+    extraWorks: job.extraWorks,
+    kls: null,
   };
 }
 
 export function demoStartTimer(caseId: string) {
-  timer = { caseId, startedAt: new Date().toISOString() };
+  const job = jobs.find((item) => item.id === caseId);
+  timer = { caseId, startedAt: new Date().toISOString(), caseNumber: job?.caseNumber, title: job?.title };
   return { hours: undefined as number | undefined };
 }
 
@@ -63,9 +92,9 @@ export function demoStopTimer() {
 export function demoAddMaterial(barcodeOrId: string) {
   const day = demoDay();
   const product = day.products.find(
-    (item) => item.id === barcodeOrId || item.barcode === barcodeOrId || item.sku === barcodeOrId,
+    (item) => item.id === barcodeOrId || item.barcode === barcodeOrId || item.sku === barcodeOrId || item.name === barcodeOrId,
   );
-  if (!product) throw new Error("Varen findes ikke.");
+  if (!product) return barcodeOrId || "Materiale";
   return product.name;
 }
 

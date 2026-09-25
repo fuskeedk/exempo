@@ -1,7 +1,7 @@
 import { addDays } from "date-fns";
 import { canManageOffice } from "@/lib/auth";
-import { STATE_LABELS, isCaseState } from "@/lib/fsm";
 import { weekStart } from "@/lib/dates";
+import { serializeJob } from "@/lib/mobile-field";
 import { isSession, jsonOk, mobileOptions, requireBearer } from "@/lib/mobile-auth";
 import { prisma } from "@/lib/prisma";
 
@@ -32,29 +32,62 @@ export async function GET(request: Request) {
     orderBy: { name: "asc" },
     select: { id: true, sku: true, name: true, barcode: true, unit: true },
   });
+  const timeEntries = await prisma.timeEntry.findMany({
+    where: office ? undefined : { userId: user.id },
+    include: { case: true },
+    orderBy: { date: "desc" },
+    take: 40,
+  });
+  const absences = await prisma.absence.findMany({
+    where: office ? undefined : { userId: user.id },
+    orderBy: { date: "desc" },
+    take: 20,
+  });
+  const klsTemplates = await prisma.klsTemplate.findMany({
+    orderBy: { name: "asc" },
+    select: { id: true, name: true, trade: true },
+  });
+  const cases = await prisma.case.findMany({
+    where: office ? undefined : { assignedToId: user.id },
+    orderBy: { createdAt: "desc" },
+    include: { extraWorks: { orderBy: { createdAt: "desc" }, take: 3 } },
+  });
+  const timerCase = worker?.timerCaseId
+    ? jobs.find((job) => job.id === worker.timerCaseId) ??
+      (await prisma.case.findUnique({ where: { id: worker.timerCaseId } }))
+    : null;
 
   return jsonOk({
     user,
-    timer: worker?.timerCaseId
-      ? { caseId: worker.timerCaseId, startedAt: worker.timerStartedAt }
+    timer: timerCase && worker?.timerStartedAt
+      ? {
+          caseId: timerCase.id,
+          startedAt: worker.timerStartedAt,
+          caseNumber: timerCase.caseNumber,
+          title: timerCase.title,
+        }
       : null,
     products,
-    jobs: jobs.map((job) => ({
-      id: job.id,
-      caseNumber: job.caseNumber,
-      title: job.title,
-      state: job.state,
-      stateLabel: isCaseState(job.state) ? STATE_LABELS[job.state] : job.state,
-      customerName: job.customerName,
-      address: `${job.customerAddress}, ${job.customerPostal} ${job.customerCity}`.trim(),
-      phone: job.customerPhone,
-      scheduledStart: job.scheduledStart,
-      extraWorks: job.extraWorks.map((extra) => ({
-        id: extra.id,
-        title: extra.title,
-        amount: extra.amount,
-        status: extra.status,
-      })),
+    klsTemplates,
+    jobs: jobs.map(serializeJob),
+    cases: cases.map(serializeJob),
+    timeEntries: timeEntries.map((entry) => ({
+      id: entry.id,
+      caseId: entry.caseId,
+      caseNumber: entry.case.caseNumber,
+      hours: entry.hours,
+      kind: entry.kind,
+      note: entry.note,
+      date: entry.date,
     })),
+    absences: absences.map((item) => ({
+      id: item.id,
+      date: item.date,
+      hours: item.hours,
+      type: item.type,
+      note: item.note,
+    })),
+    weekFrom,
+    weekTo,
   });
 }

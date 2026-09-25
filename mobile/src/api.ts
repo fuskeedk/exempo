@@ -1,4 +1,4 @@
-import type { DayPayload, SessionUser } from "./types";
+import type { CaseDetail, DayPayload, SessionUser } from "./types";
 
 function trimUrl(url: string) {
   return url.trim().replace(/\/+$/, "");
@@ -41,6 +41,50 @@ export async function fetchDay(apiUrl: string, token: string) {
   return request<DayPayload>(apiUrl, "/api/mobile/day", { token });
 }
 
+export async function fetchCase(apiUrl: string, token: string, id: string) {
+  return request<CaseDetail>(apiUrl, `/api/mobile/cases/${id}`, { token });
+}
+
+export async function addTime(
+  apiUrl: string,
+  token: string,
+  input: { caseId: string; hours: string; date: string; kind: string; note: string },
+) {
+  return request<{ ok: true }>(apiUrl, "/api/mobile/time", {
+    method: "POST",
+    token,
+    body: JSON.stringify(input),
+  });
+}
+
+export async function setCaseState(apiUrl: string, token: string, caseId: string, toState: string, note = "") {
+  return request<{ ok: true }>(apiUrl, "/api/mobile/state", {
+    method: "POST",
+    token,
+    body: JSON.stringify({ caseId, toState, note }),
+  });
+}
+
+export async function saveKls(
+  apiUrl: string,
+  token: string,
+  input: {
+    caseId: string;
+    action?: "start" | "save";
+    templateId?: string;
+    reportId?: string;
+    notes?: string;
+    sign?: boolean;
+    checks?: { id: string; status: string; comment: string }[];
+  },
+) {
+  return request<{ ok: true }>(apiUrl, "/api/mobile/kls", {
+    method: "POST",
+    token,
+    body: JSON.stringify(input),
+  });
+}
+
 export async function setTimer(apiUrl: string, token: string, action: "start" | "stop", caseId?: string) {
   return request<{ ok: true; running: boolean; hours?: number }>(apiUrl, "/api/mobile/timer", {
     method: "POST",
@@ -52,7 +96,15 @@ export async function setTimer(apiUrl: string, token: string, action: "start" | 
 export async function addMaterial(
   apiUrl: string,
   token: string,
-  input: { caseId: string; productId?: string; barcode?: string; quantity: string },
+  input: {
+    caseId: string;
+    productId?: string;
+    barcode?: string;
+    name?: string;
+    quantity: string;
+    unitPrice?: string;
+    costPrice?: string;
+  },
 ) {
   return request<{ ok: true; name: string; quantity: number }>(apiUrl, "/api/mobile/materials", {
     method: "POST",

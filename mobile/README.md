@@ -1,6 +1,6 @@
 # Exempo til iPhone
 
-Feltapp til App Store: Min dag, stopur, materialer/stregkode, foto, ekstraarbejde og fravær. Bundle ID: `dk.exempo.app`.
+Feltapp til App Store. Den spejler webudgavens felt-del — Min dag, arbejdssedler, planlægning og tid — ikke kontoret (faktura, DG, medarbejdere). Bundle ID: `dk.exempo.app`.
 
 En App Store-app kan ikke indeholde Next.js-serveren. iOS-klienten kalder `/api/mobile/*` på jeres hostede Exempo over HTTPS.
 

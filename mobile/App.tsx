@@ -1,14 +1,18 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Alert, SafeAreaView, StatusBar } from "react-native";
+import { useCallback, useEffect, useState } from "react";
+import { Alert, SafeAreaView, StatusBar, View } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import * as SplashScreen from "expo-splash-screen";
 import {
   addAbsence,
   addExtraWork,
   addMaterial,
+  addTime,
   checkHealth,
+  fetchCase,
   fetchDay,
   login,
+  saveKls,
+  setCaseState,
   setTimer,
   uploadPhoto,
 } from "./src/api";
@@ -16,21 +20,25 @@ import {
   demoAddAbsence,
   demoAddExtra,
   demoAddMaterial,
+  demoCase,
   demoDay,
   demoReset,
   demoStartTimer,
   demoStopTimer,
 } from "./src/demo";
-import { AbsenceScreen } from "./src/screens/AbsenceScreen";
+import { CalendarScreen } from "./src/screens/CalendarScreen";
+import { CasesScreen } from "./src/screens/CasesScreen";
 import { DayScreen } from "./src/screens/DayScreen";
 import { JobScreen } from "./src/screens/JobScreen";
 import { LegalScreen } from "./src/screens/LegalScreen";
 import { LoginScreen } from "./src/screens/LoginScreen";
 import { ScanScreen } from "./src/screens/ScanScreen";
 import { SettingsScreen } from "./src/screens/SettingsScreen";
+import { TabBar } from "./src/screens/TabBar";
+import { TimeScreen } from "./src/screens/TimeScreen";
 import { clearSession, loadSession, saveApiUrl, saveToken, setDemoMode } from "./src/storage";
 import { colors } from "./src/theme";
-import type { DayPayload, Route } from "./src/types";
+import type { CaseDetail, DayPayload, Route, Tab } from "./src/types";
 
 SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
@@ -40,15 +48,11 @@ export default function App() {
   const [token, setToken] = useState("");
   const [demo, setDemo] = useState(false);
   const [day, setDay] = useState<DayPayload | null>(null);
+  const [detail, setDetail] = useState<CaseDetail | null>(null);
   const [route, setRoute] = useState<Route>({ name: "login" });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [status, setStatus] = useState("");
-
-  const job = useMemo(() => {
-    const jobId = route.name === "job" ? route.id : route.name === "scan" ? route.caseId : null;
-    return jobId ? day?.jobs.find((item) => item.id === jobId) ?? null : null;
-  }, [day, route]);
 
   const refresh = useCallback(async (nextToken = token, nextDemo = demo, nextUrl = apiUrl) => {
     if (nextDemo) {
@@ -62,6 +66,27 @@ export default function App() {
     setDay(await fetchDay(nextUrl, nextToken));
   }, [apiUrl, demo, token]);
 
+  async function openJob(id: string) {
+    setError("");
+    if (demo) {
+      setDetail(demoCase(id));
+      setRoute({ name: "job", id });
+      return;
+    }
+    setDetail(await fetchCase(apiUrl, token, id));
+    setRoute({ name: "job", id });
+  }
+
+  async function reloadDetail(id: string) {
+    if (demo) {
+      setDetail(demoCase(id));
+      await refresh();
+      return;
+    }
+    setDetail(await fetchCase(apiUrl, token, id));
+    await refresh();
+  }
+
   useEffect(() => {
     (async () => {
       const session = await loadSession();
@@ -71,10 +96,10 @@ export default function App() {
       try {
         if (session.demo) {
           setDay(demoDay());
-          setRoute({ name: "day" });
+          setRoute({ name: "app", tab: "day" });
         } else if (session.token && session.apiUrl) {
           setDay(await fetchDay(session.apiUrl, session.token));
-          setRoute({ name: "day" });
+          setRoute({ name: "app", tab: "day" });
         }
       } catch {
         await clearSession();
@@ -106,7 +131,7 @@ export default function App() {
       setDemo(false);
       setToken(result.token);
       await refresh(result.token, false, apiUrl);
-      setRoute({ name: "day" });
+      setRoute({ name: "app", tab: "day" });
     });
   }
 
@@ -117,7 +142,7 @@ export default function App() {
       setDemo(true);
       setToken("");
       setDay(demoDay());
-      setRoute({ name: "day" });
+      setRoute({ name: "app", tab: "day" });
     });
   }
 
@@ -127,6 +152,7 @@ export default function App() {
     setToken("");
     setDemo(false);
     setDay(null);
+    setDetail(null);
     setError("");
     setRoute({ name: "login" });
   }
@@ -153,6 +179,7 @@ export default function App() {
         ? demoAddMaterial(productId || barcode || "")
         : (await addMaterial(apiUrl, token, { caseId, productId, barcode, quantity })).name;
       await refresh();
+      if (route.name === "job") await reloadDetail(caseId);
       Alert.alert("Materiale lagt på", name);
       if (route.name === "scan") setRoute({ name: "job", id: caseId });
     });
@@ -160,10 +187,9 @@ export default function App() {
 
   async function handlePhoto(caseId: string) {
     const permission = await ImagePicker.requestCameraPermissionsAsync();
-    const pick =
-      permission.granted
-        ? await ImagePicker.launchCameraAsync({ quality: 0.7, allowsEditing: false })
-        : await ImagePicker.launchImageLibraryAsync({ quality: 0.7, mediaTypes: ["images"] });
+    const pick = permission.granted
+      ? await ImagePicker.launchCameraAsync({ quality: 0.7, allowsEditing: false })
+      : await ImagePicker.launchImageLibraryAsync({ quality: 0.7, mediaTypes: ["images"] });
     if (pick.canceled || !pick.assets[0]) return;
     await wrap(async () => {
       if (demo) {
@@ -171,6 +197,7 @@ export default function App() {
         return;
       }
       await uploadPhoto(apiUrl, token, caseId, pick.assets[0].uri);
+      await reloadDetail(caseId);
       Alert.alert("Foto uploaded", "Billedet ligger som dokumentation på sagen.");
     });
   }
@@ -184,11 +211,16 @@ export default function App() {
       if (demo) demoAddExtra(caseId, title, amount);
       else await addExtraWork(apiUrl, token, { caseId, title, description, amount });
       await refresh();
-      Alert.alert("Ekstraarbejde", "Sendt til kontoret.");
+      if (route.name === "job") await reloadDetail(caseId);
     });
   }
 
   if (!ready) return null;
+
+  const goTab = (tab: Tab) => {
+    setError("");
+    setRoute({ name: "app", tab });
+  };
 
   let body = (
     <LoginScreen
@@ -209,7 +241,7 @@ export default function App() {
         busy={busy}
         error={error}
         status={status}
-        onBack={() => setRoute(day ? { name: "day" } : { name: "login" })}
+        onBack={() => setRoute(day ? { name: "app", tab: "day" } : { name: "login" })}
         onLegal={() => setRoute({ name: "legal" })}
         onLogout={handleLogout}
         onSave={async (url) => {
@@ -229,65 +261,92 @@ export default function App() {
     );
   } else if (route.name === "legal") {
     body = <LegalScreen onBack={() => setRoute({ name: "settings" })} />;
-  } else if (route.name === "day" && day) {
+  } else if (route.name === "app" && day) {
+    const tab = route.tab;
     body = (
-      <DayScreen
-        day={day}
-        busy={busy}
-        onOpenJob={(id) => {
-          setError("");
-          setRoute({ name: "job", id });
-        }}
-        onAbsence={() => {
-          setError("");
-          setRoute({ name: "absence" });
-        }}
-        onSettings={() => setRoute({ name: "settings" })}
-        onRefresh={() => wrap(() => refresh())}
-        onStop={() => handleTimer("stop")}
-      />
+      <View style={{ flex: 1 }}>
+        {tab === "day" ? (
+          <DayScreen
+            day={day}
+            error={error}
+            busy={busy}
+            onOpenJob={(id) => wrap(() => openJob(id))}
+            onSettings={() => setRoute({ name: "settings" })}
+            onStart={(id) => handleTimer("start", id)}
+            onStop={() => handleTimer("stop")}
+            onMaterial={(caseId, productId, quantity) => handleMaterial(caseId, productId, undefined, quantity)}
+            onScan={(caseId) => setRoute({ name: "scan", caseId })}
+            onExtra={(caseId, title, amount) => handleExtra(caseId, title, "", amount)}
+          />
+        ) : null}
+        {tab === "cases" ? (
+          <CasesScreen cases={day.cases ?? day.jobs} onOpen={(id) => wrap(() => openJob(id))} />
+        ) : null}
+        {tab === "calendar" ? (
+          <CalendarScreen jobs={day.cases ?? day.jobs} onOpen={(id) => wrap(() => openJob(id))} />
+        ) : null}
+        {tab === "time" ? (
+          <TimeScreen
+            entries={day.timeEntries ?? []}
+            absences={day.absences ?? []}
+            busy={busy}
+            error={error}
+            onAbsence={async (input) => {
+              await wrap(async () => {
+                if (demo) demoAddAbsence();
+                else await addAbsence(apiUrl, token, input);
+                await refresh();
+                Alert.alert("Fravær", "Registreret.");
+              });
+            }}
+          />
+        ) : null}
+        <TabBar tab={tab} onChange={goTab} />
+      </View>
     );
-  } else if (route.name === "job" && day && job) {
+  } else if (route.name === "job" && day && detail) {
     body = (
       <JobScreen
-        job={job}
+        detail={detail}
         day={day}
         busy={busy}
         error={error}
         onBack={() => {
           setError("");
-          setRoute({ name: "day" });
+          setRoute({ name: "app", tab: "day" });
         }}
-        onStart={() => handleTimer("start", job.id)}
+        onStart={() => handleTimer("start", detail.job.id)}
         onStop={() => handleTimer("stop")}
-        onMaterial={(productId, quantity) => handleMaterial(job.id, productId, undefined, quantity)}
-        onScan={() => setRoute({ name: "scan", caseId: job.id })}
-        onPhoto={() => handlePhoto(job.id)}
-        onExtra={(title, description, amount) => handleExtra(job.id, title, description, amount)}
+        onMaterial={(productId, quantity) => handleMaterial(detail.job.id, productId, undefined, quantity)}
+        onScan={() => setRoute({ name: "scan", caseId: detail.job.id })}
+        onPhoto={() => handlePhoto(detail.job.id)}
+        onExtra={(title, description, amount) => handleExtra(detail.job.id, title, description, amount)}
+        onTime={async (hours, date, kind, note) => {
+          await wrap(async () => {
+            if (!demo) await addTime(apiUrl, token, { caseId: detail.job.id, hours, date, kind, note });
+            await reloadDetail(detail.job.id);
+          });
+        }}
+        onState={async (toState) => {
+          await wrap(async () => {
+            if (!demo) await setCaseState(apiUrl, token, detail.job.id, toState);
+            await reloadDetail(detail.job.id);
+          });
+        }}
+        onStartKls={async (templateId) => {
+          await wrap(async () => {
+            if (!demo) await saveKls(apiUrl, token, { caseId: detail.job.id, action: "start", templateId });
+            await reloadDetail(detail.job.id);
+          });
+        }}
       />
     );
-  } else if (route.name === "scan" && job) {
+  } else if (route.name === "scan") {
     body = (
       <ScanScreen
         busy={busy}
-        onBack={() => setRoute({ name: "job", id: job.id })}
-        onCode={(code) => handleMaterial(job.id, undefined, code, "1")}
-      />
-    );
-  } else if (route.name === "absence") {
-    body = (
-      <AbsenceScreen
-        busy={busy}
-        error={error}
-        onBack={() => setRoute({ name: "day" })}
-        onSave={async (input) => {
-          await wrap(async () => {
-            if (demo) demoAddAbsence();
-            else await addAbsence(apiUrl, token, input);
-            Alert.alert("Fravær", "Registreret.");
-            setRoute({ name: "day" });
-          });
-        }}
+        onBack={() => setRoute({ name: "job", id: route.caseId })}
+        onCode={(code) => handleMaterial(route.caseId, undefined, code, "1")}
       />
     );
   }
