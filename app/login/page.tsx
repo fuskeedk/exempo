@@ -43,6 +43,17 @@ export default async function LoginPage({
             <p>Projektleder: pl@exempo.dk</p>
             <p>Tømrer: lars@exempo.dk</p>
             <p>Alle koder: exempo123</p>
+            <p>
+              <a href="/privatliv" className="underline">
+                Privatliv
+              </a>
+              {" · "}
+              <a href="/stoette" className="underline">
+                Support
+              </a>
+              {" · "}
+              iPhone-app i <code>mobile/</code>
+            </p>
           </div>
         </form>
       </div>

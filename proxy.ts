@@ -2,9 +2,11 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { SESSION_COOKIE, readSessionToken } from "@/lib/auth";
 
+const PUBLIC_PATHS = new Set(["/login", "/privatliv", "/stoette"]);
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  if (pathname === "/login") {
+  if (PUBLIC_PATHS.has(pathname) || pathname.startsWith("/api/mobile")) {
     return NextResponse.next();
   }
 

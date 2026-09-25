@@ -1,0 +1,6 @@
+{
+  "CFBundleDisplayName": "Exempo",
+  "NSCameraUsageDescription": "Exempo bruger kameraet til dokumentationsfotos på sagen og til at scanne stregkoder på materialer.",
+  "NSPhotoLibraryUsageDescription": "Exempo bruger dit fotobibliotek, så du kan vedhæfte billeder til arbejdssedlen.",
+  "NSPhotoLibraryAddUsageDescription": "Exempo kan gemme dokumentationsfotos, du tager i marken."
+}

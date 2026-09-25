@@ -37,6 +37,30 @@ Zip-filen ligger i `dist/Exempo-windows.zip`. Windows kan advare om en usigneret
 | Administrator | admin@exempo.dk | exempo123 |
 | Tømrer (marken) | lars@exempo.dk | exempo123 |
 
+## iPhone / App Store
+
+Feltappen ligger i `mobile/` (Expo, bundle ID `dk.exempo.app`). Den er klar til EAS Build og App Store Connect, men I skal selv have Apple Developer-program og en offentlig HTTPS-server.
+
+```bash
+cd mobile
+npm install
+npx expo start
+```
+
+Tryk **Prøv demo** i appen, eller sæt serveradressen til jeres Exempo og log ind som `lars@exempo.dk`.
+
+Byg og send:
+
+```bash
+npm i -g eas-cli
+eas login
+eas init
+eas build --platform ios --profile production
+eas submit --platform ios --profile production
+```
+
+Support og privatliv (påkrævet af Apple): `/stoette` og `/privatliv`. Fulde review-tekster står i `mobile/store/da-DK/listing.md` og `mobile/README.md`.
+
 ## Moduler
 
 - **Overblik** — pipeline som i Minubas sagsflow

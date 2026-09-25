@@ -1,0 +1,92 @@
+{
+  "expo": {
+    "name": "Exempo",
+    "slug": "exempo",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "exempo",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#f3eee4"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "dk.exempo.app",
+      "buildNumber": "1",
+      "icon": "./assets/icon.png",
+      "infoPlist": {
+        "CFBundleDisplayName": "Exempo",
+        "CFBundleDevelopmentRegion": "da",
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSCameraUsageDescription": "Exempo bruger kameraet til dokumentationsfotos på sagen og til at scanne stregkoder på materialer.",
+        "NSPhotoLibraryUsageDescription": "Exempo bruger dit fotobibliotek, så du kan vedhæfte billeder til arbejdssedlen.",
+        "NSPhotoLibraryAddUsageDescription": "Exempo kan gemme dokumentationsfotos, du tager i marken.",
+        "NSMicrophoneUsageDescription": "Mikrofonen bruges ikke. iOS kan spørge, hvis du optager video.",
+        "NSAppTransportSecurity": {
+          "NSAllowsLocalNetworking": true
+        }
+      },
+      "privacyManifests": {
+        "NSPrivacyTracking": false,
+        "NSPrivacyTrackingDomains": [],
+        "NSPrivacyCollectedDataTypes": [],
+        "NSPrivacyAccessedAPITypes": [
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+            "NSPrivacyAccessedAPITypeReasons": [
+              "CA92.1"
+            ]
+          },
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryFileTimestamp",
+            "NSPrivacyAccessedAPITypeReasons": [
+              "C617.1"
+            ]
+          }
+        ]
+      },
+      "config": {
+        "usesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#16382c"
+      },
+      "package": "dk.exempo.app",
+      "permissions": [
+        "CAMERA"
+      ]
+    },
+    "plugins": [
+      "expo-secure-store",
+      "expo-font",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Exempo bruger dit fotobibliotek, så du kan vedhæfte billeder til arbejdssedlen.",
+          "cameraPermission": "Exempo bruger kameraet til dokumentationsfotos på sagen."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Exempo bruger kameraet til dokumentationsfotos og til at scanne stregkoder på materialer."
+        }
+      ],
+      "expo-status-bar",
+      "expo-splash-screen"
+    ],
+    "locales": {
+      "da": "./store/da-DK/ios.json"
+    },
+    "extra": {
+      "supportsDemoMode": true
+    }
+  }
+}
