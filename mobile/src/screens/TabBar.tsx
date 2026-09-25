@@ -4,9 +4,9 @@ import type { Tab } from "../types";
 
 const tabs: { id: Tab; label: string }[] = [
   { id: "day", label: "Min dag" },
+  { id: "time", label: "Timesedler" },
   { id: "cases", label: "Arbejdssedler" },
-  { id: "calendar", label: "Planlægning" },
-  { id: "time", label: "Tid" },
+  { id: "customers", label: "Kunder" },
 ];
 
 export function TabBar({ tab, onChange }: { tab: Tab; onChange: (tab: Tab) => void }) {

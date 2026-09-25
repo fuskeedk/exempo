@@ -86,7 +86,8 @@
       "da": "./store/da-DK/ios.json"
     },
     "extra": {
-      "supportsDemoMode": true
+      "supportsDemoMode": true,
+      "apiUrl": "https://exempo.jbnet.dk"
     }
   }
 }

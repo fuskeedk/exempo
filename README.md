@@ -39,7 +39,9 @@ Zip-filen ligger i `dist/Exempo-windows.zip`. Windows kan advare om en usigneret
 
 ## iPhone / App Store
 
-Feltappen ligger i `mobile/` (Expo, bundle ID `dk.exempo.app`). Den er klar til EAS Build og App Store Connect, men I skal selv have Apple Developer-program og en offentlig HTTPS-server.
+Feltappen ligger i `mobile/` (Expo, bundle ID `dk.exempo.app`). Den taler med https://exempo.jbnet.dk og har samme felt-flow som web: Min dag, timesedler, arbejdssedler og kunder.
+
+**Ja — du kan prøve den på din MacBook.** Hurtigst er Expo Go. Med Xcode kører den i iPhone-simulator. Apple Developer Program bruges til at installere på din iPhone, TestFlight og App Store. Se `mobile/README.md`.
 
 ```bash
 cd mobile
@@ -47,9 +49,9 @@ npm install
 npx expo start
 ```
 
-Tryk **Prøv demo** i appen, eller sæt serveradressen til jeres Exempo og log ind som `lars@exempo.dk`.
+Log ind som `lars@exempo.dk` / `exempo123`, eller tryk **Prøv demo**.
 
-Byg og send:
+Byg og send (kræver Developer Program):
 
 ```bash
 npm i -g eas-cli

@@ -1,4 +1,4 @@
-import type { CaseDetail, DayPayload, SessionUser } from "./types";
+import type { CaseDetail, Customer, DayPayload, SessionUser } from "./types";
 
 function trimUrl(url: string) {
   return url.trim().replace(/\/+$/, "");
@@ -39,6 +39,11 @@ export async function login(apiUrl: string, email: string, password: string) {
 
 export async function fetchDay(apiUrl: string, token: string) {
   return request<DayPayload>(apiUrl, "/api/mobile/day", { token });
+}
+
+export async function fetchCustomers(apiUrl: string, token: string) {
+  const data = await request<{ customers: Customer[] }>(apiUrl, "/api/mobile/customers", { token });
+  return data.customers;
 }
 
 export async function fetchCase(apiUrl: string, token: string, id: string) {

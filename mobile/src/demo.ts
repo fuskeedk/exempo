@@ -55,6 +55,26 @@ export function demoDay(): DayPayload {
       { id: "te-1", caseId: "demo-1", caseNumber: "EX-2026-0004", hours: 6, kind: "ARBEJDE", note: "Opstart", date: new Date().toISOString() },
     ],
     absences: [],
+    customers: [
+      {
+        id: "c1",
+        name: "Maja Holm",
+        type: "PRIVAT",
+        phone: "20112233",
+        email: "maja@example.dk",
+        address: "Jægersborggade 12, 2200 København N",
+        caseCount: 1,
+      },
+      {
+        id: "c2",
+        name: "Hellerup Villa ApS",
+        type: "ERHVERV",
+        phone: "39664411",
+        email: "drift@hellerup-villa.dk",
+        address: "Strandvejen 188, 2900 Hellerup",
+        caseCount: 1,
+      },
+    ],
   };
 }
 

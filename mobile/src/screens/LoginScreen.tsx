@@ -28,7 +28,7 @@ export function LoginScreen({
           <Kicker>Exempo</Kicker>
           <Title>Min dag i marken</Title>
           <Text style={styles.lead}>
-            Min dag, arbejdssedler, planlægning og tid — samme feltflow som på web, uden kontoret.
+            Min dag, timesedler, arbejdssedler og kunder — samme feltflow som på web, uden kontoret.
           </Text>
         </View>
         <View style={styles.card}>

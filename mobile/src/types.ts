@@ -54,6 +54,16 @@ export type Absence = {
   note: string;
 };
 
+export type Customer = {
+  id: string;
+  name: string;
+  type?: string;
+  phone: string;
+  email: string;
+  address: string;
+  caseCount: number;
+};
+
 export type DayPayload = {
   user: SessionUser;
   timer: { caseId: string; startedAt: string | null; caseNumber?: string; title?: string } | null;
@@ -63,6 +73,7 @@ export type DayPayload = {
   cases?: Job[];
   timeEntries?: TimeEntry[];
   absences?: Absence[];
+  customers?: Customer[];
 };
 
 export type CaseDetail = {
@@ -81,7 +92,7 @@ export type CaseDetail = {
   } | null;
 };
 
-export type Tab = "day" | "cases" | "calendar" | "time";
+export type Tab = "day" | "cases" | "customers" | "time";
 
 export type Route =
   | { name: "login" }

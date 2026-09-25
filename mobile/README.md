@@ -1,55 +1,73 @@
 # Exempo til iPhone
 
-Feltapp til App Store. Den spejler webudgavens felt-del — Min dag, arbejdssedler, planlægning og tid — ikke kontoret (faktura, DG, medarbejdere). Bundle ID: `dk.exempo.app`.
+Feltapp der spejler webudgaven på https://exempo.jbnet.dk: Min dag, timesedler, arbejdssedler og kunder. Kontoret (faktura, løn, indkøb, indstillinger) er ikke med. Bundle ID: `dk.exempo.app`.
 
-En App Store-app kan ikke indeholde Next.js-serveren. iOS-klienten kalder `/api/mobile/*` på jeres hostede Exempo over HTTPS.
+Appen kalder `/api/mobile/*` over HTTPS. Standardserveren er `https://exempo.jbnet.dk`.
 
-## Forudsætninger for indsendelse
+## Prøv den på din MacBook (Apple Developer)
 
-1. **Apple Developer Program** på det team, der skal udgive appen.
-2. **Offentlig HTTPS-server** med denne repo (Vercel, en VPS eller tilsvarende) og `AUTH_SECRET` sat.
-3. **EAS / Expo-konto** til at bygge den signerede IPA.
+Ja. Du kan køre den på Mac, før den kommer i App Store.
 
-Uden de tre kan projektet bygges og testes, men Apple tager ikke imod en usigneret app.
+### 1. Hurtigst: Expo Go (ingen betalt udviklerkonto)
 
-## Test lokalt
+1. Installer [Node.js](https://nodejs.org/) og Xcode Command Line Tools.
+2. På Mac:
 
 ```bash
-cd mobile
+git clone https://github.com/fuskeedk/exempo.git
+cd exempo/mobile
 npm install
 npx expo start
 ```
 
-På en fysisk iPhone: Expo Go, og sæt serveradressen til din PCs LAN-IP, f.eks. `http://192.168.1.20:3000`. Kontoret skal køre `npm run dev` i repo-roden.
+3. Installer **Expo Go** fra App Store på iPhonen.
+4. Scan QR-koden. Log ind med `lars@exempo.dk` / `exempo123` (eller din rigtige bruger). Serveradressen er allerede `https://exempo.jbnet.dk`.
 
-«Prøv demo» virker uden server.
+### 2. iPhone-simulator i Xcode (gratis Apple-id)
 
-## Byg til TestFlight / App Store
+1. Installer **Xcode** fra Mac App Store og åbn det én gang, så iOS Simulator installeres.
+2. Log ind i Xcode under Settings → Accounts med dit Apple-id.
+3. Fra `mobile/`:
+
+```bash
+npx expo run:ios
+```
+
+Det bygger en rigtig iOS-app i Simulator. Ingen betalt Developer Program er nødvendigt til simulator.
+
+### 3. På din egen iPhone via Developer Program
+
+Med **Apple Developer Program** (det betalte team) kan du:
+
+1. Oprette appen i [App Store Connect](https://appstoreconnect.apple.com) med bundle id `dk.exempo.app`.
+2. Bygge med EAS og sende til TestFlight:
 
 ```bash
 npm i -g eas-cli
 eas login
+cd mobile
 eas init
 ```
 
-Sæt `extra.eas.projectId` i `app.json` og Apple-team i `eas.json` (`ascAppId`, `appleTeamId` efter appen er oprettet i App Store Connect).
+Sæt dit Apple-team i `eas.json` (`appleTeamId`, `ascAppId`).
 
 ```bash
 eas build --platform ios --profile production
 eas submit --platform ios --profile production
 ```
 
-I App Store Connect:
+3. Eller åbn det genererede Xcode-projekt (`npx expo prebuild --platform ios` og `ios/Exempo.xcworkspace`) og tryk Run med din iPhone valgt. Xcode signerer med dit Developer-team.
 
-- Sæt support- og privatlivs-URL til `https://<domæne>/stoette` og `/privatliv`
-- Upload 6.7" og 6.5" screenshots fra simulator
-- Sæt ITS-export til «app uses only exempt encryption»
-- Review-noter: se `store/da-DK/listing.md`
+Uden betalt program kan du stadig installere på din egen iPhone i 7 dage ad gangen via Xcode (gratis Apple-id). TestFlight og App Store kræver det betalte program.
+
+## Forudsætninger for App Store
+
+1. Apple Developer Program på det team, der skal udgive appen.
+2. Den kørende Exempo på HTTPS (`https://exempo.jbnet.dk`).
+3. Expo-konto til EAS Build.
 
 ## Ikoner
 
 ```bash
 npm run icons
 ```
-
-Skriver 1024×1024 `assets/icon.png` uden gennemsigtighed.

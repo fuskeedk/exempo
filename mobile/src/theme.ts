@@ -22,7 +22,8 @@ export const roleLabels: Record<string, string> = {
 
 export const absenceTypes = [
   { id: "FERIE", label: "Ferie" },
+  { id: "FRI", label: "Fridag" },
   { id: "SYG", label: "Sygdom" },
-  { id: "FRI", label: "Fri" },
-  { id: "ANDET", label: "Andet" },
+  { id: "BARNSYG", label: "Barnsyg" },
+  { id: "EGEN_TID", label: "Egen tid" },
 ] as const;

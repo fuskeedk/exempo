@@ -9,6 +9,7 @@ import {
   addTime,
   checkHealth,
   fetchCase,
+  fetchCustomers,
   fetchDay,
   login,
   saveKls,
@@ -26,8 +27,8 @@ import {
   demoStartTimer,
   demoStopTimer,
 } from "./src/demo";
-import { CalendarScreen } from "./src/screens/CalendarScreen";
 import { CasesScreen } from "./src/screens/CasesScreen";
+import { CustomersScreen } from "./src/screens/CustomersScreen";
 import { DayScreen } from "./src/screens/DayScreen";
 import { JobScreen } from "./src/screens/JobScreen";
 import { LegalScreen } from "./src/screens/LegalScreen";
@@ -38,16 +39,17 @@ import { TabBar } from "./src/screens/TabBar";
 import { TimeScreen } from "./src/screens/TimeScreen";
 import { clearSession, loadSession, saveApiUrl, saveToken, setDemoMode } from "./src/storage";
 import { colors } from "./src/theme";
-import type { CaseDetail, DayPayload, Route, Tab } from "./src/types";
+import type { CaseDetail, Customer, DayPayload, Route, Tab } from "./src/types";
 
 SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
 export default function App() {
   const [ready, setReady] = useState(false);
-  const [apiUrl, setApiUrl] = useState("");
+  const [apiUrl, setApiUrl] = useState("https://exempo.jbnet.dk");
   const [token, setToken] = useState("");
   const [demo, setDemo] = useState(false);
   const [day, setDay] = useState<DayPayload | null>(null);
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [detail, setDetail] = useState<CaseDetail | null>(null);
   const [route, setRoute] = useState<Route>({ name: "login" });
   const [busy, setBusy] = useState(false);
@@ -56,14 +58,22 @@ export default function App() {
 
   const refresh = useCallback(async (nextToken = token, nextDemo = demo, nextUrl = apiUrl) => {
     if (nextDemo) {
-      setDay(demoDay());
+      const payload = demoDay();
+      setDay(payload);
+      setCustomers(payload.customers ?? []);
       return;
     }
     if (!nextToken) {
       setDay(null);
       return;
     }
-    setDay(await fetchDay(nextUrl, nextToken));
+    const payload = await fetchDay(nextUrl, nextToken);
+    setDay(payload);
+    try {
+      setCustomers(await fetchCustomers(nextUrl, nextToken));
+    } catch {
+      setCustomers(payload.customers ?? []);
+    }
   }, [apiUrl, demo, token]);
 
   async function openJob(id: string) {
@@ -95,10 +105,18 @@ export default function App() {
       setDemo(session.demo);
       try {
         if (session.demo) {
-          setDay(demoDay());
+          const payload = demoDay();
+          setDay(payload);
+          setCustomers(payload.customers ?? []);
           setRoute({ name: "app", tab: "day" });
         } else if (session.token && session.apiUrl) {
-          setDay(await fetchDay(session.apiUrl, session.token));
+          const payload = await fetchDay(session.apiUrl, session.token);
+          setDay(payload);
+          try {
+            setCustomers(await fetchCustomers(session.apiUrl, session.token));
+          } catch {
+            setCustomers(payload.customers ?? []);
+          }
           setRoute({ name: "app", tab: "day" });
         }
       } catch {
@@ -141,7 +159,9 @@ export default function App() {
       await setDemoMode(true);
       setDemo(true);
       setToken("");
-      setDay(demoDay());
+      const payload = demoDay();
+      setDay(payload);
+      setCustomers(payload.customers ?? []);
       setRoute({ name: "app", tab: "day" });
     });
   }
@@ -152,6 +172,7 @@ export default function App() {
     setToken("");
     setDemo(false);
     setDay(null);
+    setCustomers([]);
     setDetail(null);
     setError("");
     setRoute({ name: "login" });
@@ -282,9 +303,7 @@ export default function App() {
         {tab === "cases" ? (
           <CasesScreen cases={day.cases ?? day.jobs} onOpen={(id) => wrap(() => openJob(id))} />
         ) : null}
-        {tab === "calendar" ? (
-          <CalendarScreen jobs={day.cases ?? day.jobs} onOpen={(id) => wrap(() => openJob(id))} />
-        ) : null}
+        {tab === "customers" ? <CustomersScreen customers={customers} /> : null}
         {tab === "time" ? (
           <TimeScreen
             entries={day.timeEntries ?? []}

@@ -32,7 +32,7 @@ export async function loadSession() {
   const [token, apiUrl, demo] = await Promise.all([read(TOKEN), read(API), read(DEMO)]);
   return {
     token: token ?? "",
-    apiUrl: apiUrl ?? process.env.EXPO_PUBLIC_API_URL ?? "",
+    apiUrl: apiUrl ?? process.env.EXPO_PUBLIC_API_URL ?? "https://exempo.jbnet.dk",
     demo: demo === "1",
   };
 }

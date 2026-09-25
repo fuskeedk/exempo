@@ -28,9 +28,9 @@ export function TimeScreen({
 
   return (
     <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-      <Kicker>Ressourcer</Kicker>
-      <Title>Tid og fravær</Title>
-      <Muted>Timer lander på arbejdssedlen, ligesom på web.</Muted>
+      <Kicker>Tid</Kicker>
+      <Title>Timesedler</Title>
+      <Muted>Registrerede timer og fravær — samme oversigt som på web.</Muted>
       <ErrorBanner message={error} />
       <Card>
         <Text style={styles.h}>Registrerede timer</Text>

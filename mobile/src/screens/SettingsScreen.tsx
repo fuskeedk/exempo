@@ -34,8 +34,8 @@ export function SettingsScreen({
       <Kicker>App Store</Kicker>
       <Title>Indstillinger</Title>
       <Muted>
-        Appen taler med jeres Exempo-server over HTTPS. Til test på samme netværk kan du bruge
-        http://DIN-PC:3000.
+        Appen er sat til https://exempo.jbnet.dk. På Mac kan du åbne den i Expo Go eller Xcode
+        Simulator. Skift kun adressen, hvis du tester en anden server.
       </Muted>
       <View style={styles.space} />
       <ErrorBanner message={error} />
