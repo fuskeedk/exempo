@@ -1,25 +1,10 @@
-# Exempo til iPhone
+# Exempo på iPhone
 
-iPhone-appen **er hjemmesiden**. Kalender, arbejdssedler, Min dag, kunder og resten ligger på https://exempo.jbnet.dk — ikke i en forenklet kopi.
+Hovedsiden **https://exempo.jbnet.dk** er appen. Alt du kan på computeren, kan du på telefonen: kalender, arbejdssedler, Min dag, kunder, tilbud, faktura (hvis du har ret).
 
-## Prøv på iPhone
+1. Åbn Safari på iPhonen.
+2. Gå til https://exempo.jbnet.dk
+3. Log ind.
+4. Del → Tilføj til hjemmeskærm.
 
-Åbn Safari og gå til:
-
-**https://exempo.jbnet.dk**
-
-Log ind som på computeren. Felt-menuen er den samme: Min dag (kalender/uge), timesedler, arbejdssedler, kunder, vognlager og serviceaftaler. Kontoret er skjult for medarbejdere, ligesom på web.
-
-Tilføj til hjemmeskærm: Del → Tilføj til hjemmeskærm.
-
-Brug **https://exempo.jbnet.dk** — ikke `/mobil`. Den gamle kopi med “Start tid” er slået fra.
-
-## Native skal (App Store)
-
-`App.tsx` åbner hjemmesiden i en WebView (`dk.exempo.app`). Sådan kommer den samme kalender og de samme arbejdssedler med i App Store.
-
-```bash
-cd ~ && (test -d exempo/.git || git clone -b cursor/sagsbehandling-fsm-604a https://github.com/fuskeedk/exempo.git) && cd ~/exempo/mobile && git pull origin cursor/sagsbehandling-fsm-604a && npm install && npx expo start --ios
-```
-
-Xcode-simulator kræver Xcode. Expo Go-tunnel er unødvendig, når du bare åbner hjemmesiden på telefonen.
+Den native mappe her åbner samme site i WebView, hvis I senere vil i App Store (`dk.exempo.app`).
