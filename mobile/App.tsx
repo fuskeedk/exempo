@@ -152,7 +152,7 @@ export default function App() {
 const styles = StyleSheet.create({
   fill: { flex: 1, backgroundColor: "#16382c" },
   loader: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#16382c",
