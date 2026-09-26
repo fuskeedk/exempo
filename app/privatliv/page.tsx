@@ -12,46 +12,33 @@ export default function PrivacyPage() {
       <div className="mx-auto max-w-2xl">
         <p className="text-xs uppercase tracking-[0.28em] text-muted">Exempo</p>
         <h1 className="mt-3 font-serif text-4xl">Privatlivspolitik</h1>
-        <p className="mt-2 text-sm text-muted">Sidst opdateret 25. september 2026</p>
+        <p className="mt-2 text-sm text-muted">Sidst opdateret 26. september 2026</p>
         <div className="mt-8 space-y-5 text-[17px] leading-7">
           <p>
-            Exempo er et ordrestyringssystem til håndværksvirksomheder. iOS-appen bruges af
-            medarbejdere i marken og taler kun med jeres egen Exempo-server.
+            Exempo-appen viser det samme ordrestyringssystem som på https://exempo.jbnet.dk.
+            Medarbejdere logger ind og arbejder med sager, kalender, tid, materialer og faktura
+            hos den virksomhed, der hoster Exempo.
           </p>
           <h2 className="font-serif text-2xl">Dataansvarlig</h2>
           <p>
             Den virksomhed, der hoster Exempo og opretter medarbejderkonti, er dataansvarlig.
-            Appen indsamler ikke data til Exempos udvikler ud over det, I selv sender til jeres
-            server.
+            Appen indsamler ikke data til tracking eller annoncer.
           </p>
           <h2 className="font-serif text-2xl">Hvad appen behandler</h2>
           <ul className="list-disc space-y-2 pl-5">
-            <li>Navn, e-mail og rolle på den indloggede medarbejder</li>
-            <li>Arbejdssedler, kunder, adresser og telefonnumre der er tildelt medarbejderen</li>
-            <li>Tid, materialer, ekstraarbejde og fravær, som medarbejderen registrerer</li>
-            <li>Fotos af arbejdet, som medarbejderen selv tager eller vælger fra rullen</li>
+            <li>Navn, e-mail og rolle på den indloggede bruger</li>
+            <li>Sager, kunder, kalender, tid, materialer, tilbud og fakturaer I selv opretter</li>
+            <li>Fotos, som brugeren selv tager eller vælger fra rullen</li>
           </ul>
           <h2 className="font-serif text-2xl">Kamera og billeder</h2>
           <p>
-            Kameraet bruges til dokumentationsfotos og til at scanne stregkoder på materialer.
-            Billeder uploades til jeres Exempo-server og knyttes til sagen. Appen sælger ikke
-            billeder og bruger ikke dem til annoncer.
-          </p>
-          <h2 className="font-serif text-2xl">Lagring på telefonen</h2>
-          <p>
-            Login-token gemmes i iOS Keychain. Serveradresse gemmes lokalt på enheden. Der
-            trackes ikke på tværs af apps, og der bruges ikke reklame-id.
+            Kameraet bruges til dokumentationsfotos på arbejdssedlen. Billeder uploades til
+            jeres Exempo-server. Appen sælger ikke billeder.
           </p>
           <h2 className="font-serif text-2xl">Videregivelse</h2>
           <p>
-            Appen videregiver ikke oplysninger til tredjeparter. Trafik går via HTTPS til den
-            server, I selv angiver i indstillinger.
-          </p>
-          <h2 className="font-serif text-2xl">Rettigheder</h2>
-          <p>
-            Medarbejdere kan bede deres arbejdsgiver om indsigt, berigtigelse eller sletning
-            efter databeskyttelsesreglerne. Slet kontoen ved at kontakte virksomhedens
-            administrator.
+            Trafik går via HTTPS til https://exempo.jbnet.dk. Appen videregiver ikke oplysninger
+            til tredjeparter til annoncer.
           </p>
           <p>
             Spørgsmål:{" "}

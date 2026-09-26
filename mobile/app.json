@@ -11,7 +11,7 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#f3eee4"
+      "backgroundColor": "#16382c"
     },
     "ios": {
       "supportsTablet": true,
@@ -64,33 +64,22 @@
       ]
     },
     "plugins": [
-      "expo-secure-store",
-      "expo-font",
-      [
-        "expo-image-picker",
-        {
-          "photosPermission": "Exempo bruger dit fotobibliotek, så du kan vedhæfte billeder til arbejdssedlen.",
-          "cameraPermission": "Exempo bruger kameraet til dokumentationsfotos på sagen."
-        }
-      ],
-      [
-        "expo-camera",
-        {
-          "cameraPermission": "Exempo bruger kameraet til dokumentationsfotos og til at scanne stregkoder på materialer."
-        }
-      ],
       "expo-status-bar",
-      "expo-splash-screen"
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#16382c"
+        }
+      ]
     ],
     "locales": {
       "da": "./store/da-DK/ios.json"
     },
     "extra": {
-      "supportsDemoMode": true,
+      "supportsDemoMode": false,
       "apiUrl": "https://exempo.jbnet.dk"
-    },
-    "experiments": {
-      "baseUrl": ""
     }
   }
 }

@@ -14,7 +14,9 @@
     "typecheck": "tsc --noEmit",
     "icons": "node scripts/generate-icons.mjs",
     "prebuild": "expo prebuild",
-    "build:ios": "eas build --platform ios --profile production"
+    "build:ios": "eas build --platform ios --profile production",
+    "build:simulator": "eas build --platform ios --profile simulator",
+    "submit:ios": "eas submit --platform ios --profile production"
   },
   "dependencies": {
     "expo": "^57.0.25",

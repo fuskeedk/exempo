@@ -39,15 +39,16 @@ Zip-filen ligger i `dist/Exempo-windows.zip`. Windows kan advare om en usigneret
 
 ## iPhone / App Store
 
-**Hjemmesiden er appen.** Åbn [https://exempo.jbnet.dk](https://exempo.jbnet.dk) i Safari og log ind som på computeren. Kalender, arbejdssedler, Min dag og resten er de samme sider.
+iPhone-appen er en native iOS-binær (`dk.exempo.app`) klar til TestFlight og App Store. Den viser hele Exempo — samme login og samme funktioner som på computeren. Der er ikke en separat felt-app og ikke `/mobil`.
 
-Læg den på hjemmeskærmen: Del → Tilføj til hjemmeskærm. Brug ikke `/mobil`.
+Indtil I udgiver i App Store: åbn [https://exempo.jbnet.dk](https://exempo.jbnet.dk) i Safari → Del → Tilføj til hjemmeskærm.
 
 Log ind som `lars@exempo.dk` / `exempo123`.
 
-Byg og send (kræver Developer Program):
+Byg og send (kræver Apple Developer Program):
 
 ```bash
+cd mobile
 npm i -g eas-cli
 eas login
 eas init
@@ -55,12 +56,12 @@ eas build --platform ios --profile production
 eas submit --platform ios --profile production
 ```
 
-Support og privatliv (påkrævet af Apple): `/stoette` og `/privatliv`. Fulde review-tekster står i `mobile/store/da-DK/listing.md` og `mobile/README.md`.
+På Mac kan I først bygge til Simulator med `eas build --platform ios --profile simulator`. Support og privatliv (påkrævet af Apple): https://exempo.jbnet.dk/stoette og https://exempo.jbnet.dk/privatliv. Review-tekster: `mobile/store/da-DK/listing.md`.
 
 ## Moduler
 
 - **Overblik** — pipeline som i Minubas sagsflow
-- **Min dag** — montørens app: stopur, materialer, stregkode, foto, ekstraarbejde, fravær
+- **Min dag** — montørens uge/dag, materialer, foto, ekstraarbejde og fravær
 - **Tilbud** — forbrug, fast pris eller kalkulation; godkendt tilbud bliver arbejdsseddel
 - **Arbejdssedler** — FSM fra ny sag til faktura, KLS og dokumentation
 - **Planlægning** — medarbejderkalender, fravær og ressourcer (bil, lift)

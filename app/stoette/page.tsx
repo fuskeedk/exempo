@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Support — Exempo",
-  description: "Hjælp til Exempo-appen og kontoret.",
+  description: "Hjælp til Exempo på telefon og computer.",
 };
 
 export default function SupportPage() {
@@ -14,23 +14,22 @@ export default function SupportPage() {
         <h1 className="mt-3 font-serif text-4xl">Support</h1>
         <div className="mt-8 space-y-5 text-[17px] leading-7">
           <p>
-            Exempo-appen er feltappen til Min dag: tid, materialer, foto, ekstraarbejde og
-            fravær. Kontoret kører i browseren.
+            iPhone-appen er det samme Exempo som på computeren. Log ind med den konto, kontoret
+            har oprettet.
           </p>
           <h2 className="font-serif text-2xl">Kom i gang</h2>
           <ol className="list-decimal space-y-2 pl-5">
-            <li>Åbn Indstillinger i appen og sæt jeres Exempo-server (https://…).</li>
-            <li>Log ind med den e-mail, kontoret har oprettet.</li>
-            <li>På Min dag ser du dagens arbejdssedler.</li>
+            <li>Åbn appen. Den viser https://exempo.jbnet.dk.</li>
+            <li>Log ind med e-mail og adgangskode.</li>
+            <li>Brug menuen som på computeren: Min dag, arbejdssedler, kalender, kunder.</li>
           </ol>
           <h2 className="font-serif text-2xl">Demo</h2>
           <p>
-            I en demo-installation: <code>lars@exempo.dk</code> / <code>exempo123</code>. I
-            appen kan du også vælge «Prøv demo» uden server.
+            <code>lars@exempo.dk</code> / <code>exempo123</code> (montør). Projektleder:{" "}
+            <code>pl@exempo.dk</code> / <code>exempo123</code>.
           </p>
           <h2 className="font-serif text-2xl">Kontakt</h2>
           <p>
-            Skriv til{" "}
             <a className="underline" href="mailto:dvaergen98@gmail.com">
               dvaergen98@gmail.com
             </a>
