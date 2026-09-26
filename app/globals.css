@@ -100,8 +100,22 @@ a {
 
 @media (max-width: 1023px) {
   .wo {
+    width: 100%;
+    max-width: 100%;
     min-width: 0;
     overflow-x: clip;
+    box-sizing: border-box;
+  }
+
+  .wo-layout,
+  .wo-main,
+  .wo-strip,
+  .wo-section,
+  .wo-section-body {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
   }
 
   .wo-top {
