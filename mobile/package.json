@@ -4,7 +4,8 @@
   "private": true,
   "main": "index.ts",
   "scripts": {
-    "start": "expo start",
+    "start": "expo start --tunnel --clear",
+    "start:lan": "expo start --offline --lan --clear",
     "ios": "expo start --ios",
     "android": "expo start --android",
     "web": "expo start --web",
@@ -27,6 +28,7 @@
     "react-native-web": "^0.21.2"
   },
   "devDependencies": {
+    "@expo/ngrok": "^4.1.3",
     "@types/react": "~19.2.4",
     "typescript": "~6.0.3"
   }

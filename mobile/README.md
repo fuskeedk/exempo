@@ -26,8 +26,10 @@ Brug **ikke** `lars@exempo.dk` i Expo Go eller Expo CLI. Den bruger findes kun i
 3. På Mac, kopiér **hele linjen** ind i Terminal (den går ind i mappen, henter koden og starter Expo):
 
 ```bash
-cd ~ && (test -d exempo/.git || git clone -b cursor/sagsbehandling-fsm-604a https://github.com/fuskeedk/exempo.git) && cd ~/exempo/mobile && git pull origin cursor/sagsbehandling-fsm-604a && npm install && npx expo login && npx expo start
+cd ~ && (test -d exempo/.git || git clone -b cursor/sagsbehandling-fsm-604a https://github.com/fuskeedk/exempo.git) && cd ~/exempo/mobile && git pull origin cursor/sagsbehandling-fsm-604a && npm install && npx expo login && npx expo start --tunnel --clear
 ```
+
+Vent til terminalen skriver at tunnelen er klar, og scan **den nye** QR-kode i Expo Go. `request timed out` betyder at iPhonen ikke kunne nå Mac’en direkte (forskelligt Wi-Fi, gæstenet eller firewall). Tunnel går udenom det.
 
 4. Installer **Expo Go** fra App Store på iPhonen, og log ind der med **samme** Expo-konto.
 5. Scan QR-koden. På den grønne Exempo-skærm logger du ind med `lars@exempo.dk` / `exempo123`.
