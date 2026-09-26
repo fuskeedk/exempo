@@ -10,6 +10,7 @@ import { nextQuoteNumber } from "@/lib/numbers";
 import { buildQuoteEmail, isEmail, quoteEmailMessageId } from "@/lib/quote-email";
 import { fetchQuoteReplies } from "@/lib/quote-replies";
 import { convertApprovedQuoteToCase, customerQuotePath, ensureQuoteShareToken, newShareToken } from "@/lib/quotes";
+import { ensureCustomerFromForm } from "@/lib/customer-from-form";
 import { companyLogoAbsoluteUrl } from "@/lib/logo";
 import { prisma } from "@/lib/prisma";
 import { getSettings } from "@/lib/settings";
@@ -41,23 +42,14 @@ function linesFromForm(formData: FormData) {
 
 export async function createQuoteAction(formData: FormData) {
   const user = await requireRole(["ADMIN", "PL"]);
-  const customerId = str(formData, "customerId");
   const title = str(formData, "title");
-  if (!customerId || !title) throw new Error("Kunde og titel er påkrævet.");
-  const customer = await prisma.customer.findUnique({
-    where: { id: customerId },
-    include: { addresses: true },
-  });
-  if (!customer) throw new Error("Kunden findes ikke.");
-  const requestedAddress = str(formData, "addressId");
-  const addressId = customer.addresses.some((item) => item.id === requestedAddress)
-    ? requestedAddress
-    : customer.addresses[0]?.id;
+  if (!title) throw new Error("Titel er påkrævet.");
+  const resolved = await ensureCustomerFromForm(prisma, formData, { requireName: true });
   const quote = await prisma.quote.create({
     data: {
       quoteNumber: await nextQuoteNumber(),
-      customerId,
-      addressId,
+      customerId: resolved.customerId,
+      addressId: resolved.addressId,
       title,
       description: str(formData, "description"),
       trade: str(formData, "trade") || "ANDET",
@@ -69,6 +61,7 @@ export async function createQuoteAction(formData: FormData) {
     },
   });
   revalidatePath("/tilbud");
+  revalidatePath("/kunder");
   redirect(`/tilbud/${quote.id}`);
 }
 

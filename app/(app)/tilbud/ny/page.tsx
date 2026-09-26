@@ -27,6 +27,8 @@ export default async function NewQuotePage() {
         customers={customers.map((customer) => ({
           id: customer.id,
           name: customer.name,
+          phone: customer.phone,
+          email: customer.email,
           addresses: customer.addresses.map((address) => ({
             id: address.id,
             street: address.street,

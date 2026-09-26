@@ -9,7 +9,7 @@ import { CASE_TRADES, PRICING_MODE_LABELS, PRICING_MODES, TRADE_LABELS } from "@
 import { parseKrToOre } from "@/lib/money";
 
 type Address = { id: string; street: string; postal: string; city: string };
-type Customer = { id: string; name: string; addresses: Address[] };
+type Customer = { id: string; name: string; phone?: string; email?: string; addresses: Address[] };
 
 type DraftLine = {
   key: string;
@@ -44,6 +44,12 @@ export function QuoteComposer({
 }) {
   const [customerId, setCustomerId] = useState("");
   const [addressId, setAddressId] = useState("");
+  const [customerName, setCustomerName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
+  const [customerEmail, setCustomerEmail] = useState("");
+  const [street, setStreet] = useState("");
+  const [postal, setPostal] = useState("");
+  const [city, setCity] = useState("");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [lines, setLines] = useState<DraftLine[]>(() => Array.from({ length: 5 }, () => newLine()));
@@ -51,8 +57,9 @@ export function QuoteComposer({
 
   const customer = customers.find((row) => row.id === customerId);
   const addresses = customer?.addresses ?? [];
-  const address =
+  const pickedAddress =
     addresses.find((row) => row.id === addressId) ?? addresses[0] ?? null;
+  const address = street || postal || city ? { street, postal, city } : pickedAddress;
 
   const previewLines = lines
     .filter((line) => line.description.trim())
@@ -62,10 +69,26 @@ export function QuoteComposer({
       unitPrice: parseKrToOre(line.price || "0"),
     }));
 
+  function applyAddress(row?: Address | null) {
+    setStreet(row?.street ?? "");
+    setPostal(row?.postal ?? "");
+    setCity(row?.city ?? "");
+  }
+
   function pickCustomer(id: string) {
     setCustomerId(id);
     const row = customers.find((item) => item.id === id);
-    setAddressId(row?.addresses[0]?.id ?? "");
+    const nextAddress = row?.addresses[0] ?? null;
+    setAddressId(nextAddress?.id ?? "");
+    setCustomerName(row?.name ?? "");
+    setCustomerPhone(row?.phone ?? "");
+    setCustomerEmail(row?.email ?? "");
+    applyAddress(nextAddress);
+  }
+
+  function pickAddress(id: string) {
+    setAddressId(id);
+    applyAddress(addresses.find((item) => item.id === id) ?? null);
   }
 
   return (
@@ -74,8 +97,8 @@ export function QuoteComposer({
         <h2 className="font-serif text-xl">Tilbuddet</h2>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Kunde">
-            <Select name="customerId" required value={customerId} onChange={(event) => pickCustomer(event.target.value)}>
-              <option value="">Vælg kunde…</option>
+            <Select name="customerId" value={customerId} onChange={(event) => pickCustomer(event.target.value)}>
+              <option value="">Ny kunde…</option>
               {customers.map((row) => (
                 <option key={row.id} value={row.id}>
                   {row.name}
@@ -92,16 +115,56 @@ export function QuoteComposer({
               placeholder="Udskiftning af køkkenbord"
             />
           </Field>
-          <Field label="Adresse">
-            <Select name="addressId" value={addressId} onChange={(event) => setAddressId(event.target.value)}>
-              <option value="">{customer ? "Kundens primære adresse" : "Vælg kunde først"}</option>
-              {addresses.map((row) => (
-                <option key={row.id} value={row.id}>
-                  {row.street}, {row.postal} {row.city}
-                </option>
-              ))}
-            </Select>
+          <Field label="Kundenavn">
+            <Input
+              name="customerName"
+              required
+              value={customerName}
+              onChange={(event) => setCustomerName(event.target.value)}
+              placeholder="Navn"
+            />
           </Field>
+          <Field label="Telefon">
+            <Input
+              name="customerPhone"
+              type="tel"
+              value={customerPhone}
+              onChange={(event) => setCustomerPhone(event.target.value)}
+            />
+          </Field>
+          <Field label="E-mail">
+            <Input
+              name="customerEmail"
+              type="email"
+              value={customerEmail}
+              onChange={(event) => setCustomerEmail(event.target.value)}
+            />
+          </Field>
+          <Field label="Adresse">
+            <Input
+              name="customerAddress"
+              value={street}
+              onChange={(event) => setStreet(event.target.value)}
+            />
+          </Field>
+          <Field label="Postnr.">
+            <Input name="customerPostal" value={postal} onChange={(event) => setPostal(event.target.value)} />
+          </Field>
+          <Field label="By">
+            <Input name="customerCity" value={city} onChange={(event) => setCity(event.target.value)} />
+          </Field>
+          {customer ? (
+            <Field label="Gemt adresse">
+              <Select name="addressId" value={addressId} onChange={(event) => pickAddress(event.target.value)}>
+                <option value="">Kundens primære adresse</option>
+                {addresses.map((row) => (
+                  <option key={row.id} value={row.id}>
+                    {row.street}, {row.postal} {row.city}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+          ) : null}
           <Field label="Fag">
             <Select name="trade" defaultValue="ANDET">
               {CASE_TRADES.map((trade) => (
@@ -228,7 +291,7 @@ export function QuoteComposer({
           title={title}
           description={description}
           validUntil={validUntil}
-          customerName={customer?.name ?? ""}
+          customerName={customerName}
           address={address}
           lines={previewLines}
           companyName={companyName}

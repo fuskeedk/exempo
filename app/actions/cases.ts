@@ -9,6 +9,7 @@ import { isTrade, isPricingMode, isOrderType, canDeleteCase } from "@/lib/catalo
 import { defaultSlotOnDay, FULL_DAY_CLOCK_HOURS, parseDateInput, parseDayParam, shiftScheduleToDay, slotAtHour, atTimeOnDay } from "@/lib/dates";
 import { canTransition, isCaseState, isTimeLocked, TIME_LOCKED_MESSAGE, type CaseState } from "@/lib/fsm";
 import { parseKrToOre } from "@/lib/money";
+import { ensureCustomerFromForm } from "@/lib/customer-from-form";
 import { nextCaseNumber } from "@/lib/numbers";
 import { prisma } from "@/lib/prisma";
 import { materialPricePatch } from "@/lib/workorder";
@@ -41,35 +42,18 @@ async function transitionContext(caseId: string) {
 export async function createCaseAction(formData: FormData) {
   const user = await requireRole(["ADMIN", "PL"]);
   const description = str(formData, "description");
-  const customerId = str(formData, "customerId");
-  let customerName = str(formData, "customerName") || str(formData, "contactName");
-  let customerAddress = str(formData, "customerAddress");
-  let customerPostal = str(formData, "customerPostal");
-  let customerCity = str(formData, "customerCity");
-  let customerPhone = str(formData, "customerPhone") || str(formData, "customerMobile");
-  let customerEmail = str(formData, "customerEmail");
-  let addressId: string | undefined;
-
-  if (customerId) {
-    const customer = await prisma.customer.findUnique({
-      where: { id: customerId },
-      include: { addresses: true },
-    });
-    if (customer) {
-      customerName = customerName || customer.name;
-      customerPhone = customerPhone || customer.phone;
-      customerEmail = customerEmail || customer.email;
-      const address =
-        customer.addresses.find((item) => item.id === str(formData, "addressId")) ??
-        customer.addresses[0];
-      if (address && !customerAddress) {
-        addressId = address.id;
-        customerAddress = address.street;
-        customerPostal = address.postal;
-        customerCity = address.city;
-      }
-    }
-  }
+  const resolved = await ensureCustomerFromForm(prisma, formData, {
+    requireName: true,
+    requireAddress: true,
+  });
+  const customerId = resolved.customerId;
+  const customerPhone = resolved.customerPhone;
+  const customerEmail = resolved.customerEmail;
+  let customerName = resolved.customerName;
+  let customerAddress = resolved.customerAddress;
+  let customerPostal = resolved.customerPostal;
+  let customerCity = resolved.customerCity;
+  const addressId = resolved.addressId;
 
   if (str(formData, "sameInstall") !== "1") {
     customerAddress = str(formData, "installAddress") || customerAddress;
@@ -99,7 +83,7 @@ export async function createCaseAction(formData: FormData) {
       caseNumber,
       title,
       description,
-      customerId: customerId || undefined,
+      customerId,
       addressId,
       customerName,
       customerAddress,
@@ -156,6 +140,7 @@ export async function createCaseAction(formData: FormData) {
 
   revalidatePath("/");
   revalidatePath("/sager");
+  revalidatePath("/kunder");
   redirect(`/sager/${sag.id}`);
 }
 
