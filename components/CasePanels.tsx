@@ -103,11 +103,13 @@ export function CaseHero({
             {sag.customerCity ? `, ${sag.customerPostal} ${sag.customerCity}` : ""}
           </dd>
         </div>
-        <div>
-          <dt className="text-xs uppercase tracking-wider text-muted">Forsikring</dt>
-          <dd className="mt-1 font-medium">{sag.insuranceCompany || "—"}</dd>
-          <dd className="text-muted">{sag.claimNumber || "Intet skadenr."}</dd>
-        </div>
+        {sag.insuranceCompany || sag.claimNumber ? (
+          <div>
+            <dt className="text-xs uppercase tracking-wider text-muted">Forsikring</dt>
+            <dd className="mt-1 font-medium">{sag.insuranceCompany || "—"}</dd>
+            <dd className="text-muted">{sag.claimNumber || "Intet skadenr."}</dd>
+          </div>
+        ) : null}
         <div>
           <dt className="text-xs uppercase tracking-wider text-muted">Medarbejder</dt>
           <dd className="mt-1 font-medium">{sag.assignedTo?.name ?? "Ikke tildelt"}</dd>
