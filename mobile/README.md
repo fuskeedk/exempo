@@ -1,88 +1,25 @@
 # Exempo til iPhone
 
-Feltapp der spejler webudgaven på https://exempo.jbnet.dk: Min dag, timesedler, arbejdssedler og kunder. Kontoret (faktura, løn, indkøb, indstillinger) er ikke med. Bundle ID: `dk.exempo.app`.
+iPhone-appen **er hjemmesiden**. Kalender, arbejdssedler, Min dag, kunder og resten ligger på https://exempo.jbnet.dk — ikke i en forenklet kopi.
 
-Appen kalder `/api/mobile/*` over HTTPS. Standardserveren er `https://exempo.jbnet.dk`.
+## Prøv på iPhone
 
-## Prøv den på din MacBook (Apple Developer)
+Åbn Safari og gå til:
 
-Ja. Du kan køre den på Mac, før den kommer i App Store.
+**https://exempo.jbnet.dk**
 
-### To slags login (vigtigt)
+Log ind som på computeren. Felt-menuen er den samme: Min dag (kalender/uge), timesedler, arbejdssedler, kunder, vognlager og serviceaftaler. Kontoret er skjult for medarbejdere, ligesom på web.
 
-Expo og Exempo er ikke det samme. Expo-beskeden *you will need to be signed into Expo Go and Expo CLI* handler kun om Expo-kontoen.
+Tilføj til hjemmeskærm: Del → Tilføj til hjemmeskærm.
 
-| Hvor | Konto | Kode |
-| --- | --- | --- |
-| expo.dev, `npx expo login` og Expo Go | Din **egen** mail (gratis på [expo.dev/signup](https://expo.dev/signup)) | Din Expo-adgangskode |
-| Den grønne Exempo-skærm i appen | `lars@exempo.dk` | `exempo123` |
+`https://exempo.jbnet.dk/mobil` sender dig videre til Min dag på den rigtige side.
 
-Brug **ikke** `lars@exempo.dk` i Expo Go eller Expo CLI. Den bruger findes kun i Exempo.
+## Native skal (App Store)
 
-### 1. Hurtigst: Expo Go (ingen betalt udviklerkonto)
-
-1. Installer [Node.js](https://nodejs.org/) og Xcode Command Line Tools.
-2. Opret en gratis Expo-konto på [expo.dev/signup](https://expo.dev/signup) med din egen e-mail.
-3. **Prøv på iPhone uden Expo Go:** åbn Safari og gå til [https://exempo.jbnet.dk/mobil](https://exempo.jbnet.dk/mobil). Log ind med `lars@exempo.dk` / `exempo123`. Del → Tilføj til hjemmeskærm, hvis du vil have et ikon.
-
-Expo Go-tunnelen (`failed to start tunnel` / `request timed out`) virker ofte ikke på almindeligt Wi-Fi. Den hostede app bruger ikke din Mac.
-
-4. På Mac, hvis du vil køre den lokalt i browseren (ingen tunnel):
+`App.tsx` åbner hjemmesiden i en WebView (`dk.exempo.app`). Sådan kommer den samme kalender og de samme arbejdssedler med i App Store.
 
 ```bash
-cd ~ && (test -d exempo/.git || git clone -b cursor/sagsbehandling-fsm-604a https://github.com/fuskeedk/exempo.git) && cd ~/exempo/mobile && git pull origin cursor/sagsbehandling-fsm-604a && npm install && npx expo start --web --offline --clear
+cd ~ && (test -d exempo/.git || git clone -b cursor/sagsbehandling-fsm-604a https://github.com/fuskeedk/exempo.git) && cd ~/exempo/mobile && git pull origin cursor/sagsbehandling-fsm-604a && npm install && npx expo start --ios
 ```
 
-4. Installer **Expo Go** fra App Store på iPhonen, og log ind der med **samme** Expo-konto.
-5. Scan QR-koden. På den grønne Exempo-skærm logger du ind med `lars@exempo.dk` / `exempo123`.
-
-Mac og iPhone skal være på samme Wi-Fi, ellers tryk `s` i terminalen og vælg tunnel (kræver også Expo-login).
-
-### 2. iPhone-simulator i Xcode (gratis Apple-id)
-
-1. Installer **Xcode** fra Mac App Store og åbn det én gang, så iOS Simulator installeres.
-2. Log ind i Xcode under Settings → Accounts med dit Apple-id.
-3. Fra `mobile/`:
-
-```bash
-npx expo run:ios
-```
-
-Det bygger en rigtig iOS-app i Simulator. Ingen betalt Developer Program er nødvendigt til simulator.
-
-### 3. På din egen iPhone via Developer Program
-
-Med **Apple Developer Program** (det betalte team) kan du:
-
-1. Oprette appen i [App Store Connect](https://appstoreconnect.apple.com) med bundle id `dk.exempo.app`.
-2. Bygge med EAS og sende til TestFlight:
-
-```bash
-npm i -g eas-cli
-eas login
-cd mobile
-eas init
-```
-
-Sæt dit Apple-team i `eas.json` (`appleTeamId`, `ascAppId`).
-
-```bash
-eas build --platform ios --profile production
-eas submit --platform ios --profile production
-```
-
-3. Eller åbn det genererede Xcode-projekt (`npx expo prebuild --platform ios` og `ios/Exempo.xcworkspace`) og tryk Run med din iPhone valgt. Xcode signerer med dit Developer-team.
-
-Uden betalt program kan du stadig installere på din egen iPhone i 7 dage ad gangen via Xcode (gratis Apple-id). TestFlight og App Store kræver det betalte program.
-
-## Forudsætninger for App Store
-
-1. Apple Developer Program på det team, der skal udgive appen.
-2. Den kørende Exempo på HTTPS (`https://exempo.jbnet.dk`).
-3. Expo-konto til EAS Build.
-
-## Ikoner
-
-```bash
-npm run icons
-```
+Xcode-simulator kræver Xcode. Expo Go-tunnel er unødvendig, når du bare åbner hjemmesiden på telefonen.

@@ -90,7 +90,7 @@
       "apiUrl": "https://exempo.jbnet.dk"
     },
     "experiments": {
-      "baseUrl": "/mobil"
+      "baseUrl": ""
     }
   }
 }

@@ -39,21 +39,11 @@ Zip-filen ligger i `dist/Exempo-windows.zip`. Windows kan advare om en usigneret
 
 ## iPhone / App Store
 
-Feltappen ligger i `mobile/` (Expo, bundle ID `dk.exempo.app`). Den taler med https://exempo.jbnet.dk og har samme felt-flow som web: Min dag, timesedler, arbejdssedler og kunder.
+iPhone-appen **er hjemmesiden**. Åbn [https://exempo.jbnet.dk](https://exempo.jbnet.dk) i Safari — kalender, arbejdssedler, Min dag og resten er de samme som på computeren. Del → Tilføj til hjemmeskærm, hvis du vil have et ikon.
 
-**Ja — du kan prøve den på din MacBook.** Hurtigst er Expo Go. Med Xcode kører den i iPhone-simulator. Apple Developer Program bruges til at installere på din iPhone, TestFlight og App Store. Se `mobile/README.md`.
+`/mobil` sender videre til Min dag. Den native skal i `mobile/` (bundle `dk.exempo.app`) åbner samme site i WebView til App Store. Se `mobile/README.md`.
 
-Hent koden fra GitHub (ikke fra webserveren). Expo Go og Expo CLI skal bruge **din egen** gratis [Expo-konto](https://expo.dev/signup) — ikke `lars@exempo.dk`. Den grønne login-skærm i appen er Exempo.
-
-Åbn [https://exempo.jbnet.dk/mobil](https://exempo.jbnet.dk/mobil) i Safari på iPhonen. Ingen Expo Go og ingen tunnel.
-
-Lokalt på Mac:
-
-```bash
-cd ~ && (test -d exempo/.git || git clone -b cursor/sagsbehandling-fsm-604a https://github.com/fuskeedk/exempo.git) && cd ~/exempo/mobile && git pull origin cursor/sagsbehandling-fsm-604a && npm install && npx expo start --web --offline --clear
-```
-
-Log ind som `lars@exempo.dk` / `exempo123`, eller tryk **Prøv demo**.
+Log ind som `lars@exempo.dk` / `exempo123`.
 
 Byg og send (kræver Developer Program):
 
