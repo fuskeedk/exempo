@@ -97,3 +97,144 @@ a {
     background: white;
   }
 }
+
+@media (max-width: 1023px) {
+  .wo {
+    min-width: 0;
+    overflow-x: clip;
+  }
+
+  .wo-top {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .wo-top h1 {
+    font-size: 1.35rem;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+  }
+
+  .wo-settings {
+    align-self: flex-start;
+  }
+
+  .wo-strip {
+    flex-direction: column;
+    padding: 10px;
+  }
+
+  .wo-pipeline {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .wo-chevron {
+    flex: 1 1 calc(50% - 6px);
+    min-width: 0;
+  }
+
+  .wo-chevron summary,
+  .wo-chevron-static {
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+
+  .wo-kpis {
+    margin-left: 0;
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .wo-kpi {
+    min-width: 0;
+    border-left: 0;
+    border-top: 1px solid #eee;
+    padding: 10px 2px 2px;
+  }
+
+  .wo-kpi--chart {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+  }
+
+  .wo-section {
+    scroll-margin-top: calc(4.75rem + env(safe-area-inset-top));
+  }
+
+  .wo-kv--split > div {
+    grid-template-columns: 1fr;
+  }
+
+  .wo-kv--split dd {
+    text-align: left;
+  }
+
+  .wo-contact-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .wo-contact-row a {
+    text-align: left;
+    word-break: break-word;
+  }
+
+  .wo-table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .wo-inline-form {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .wo-inline-form input,
+  .wo-inline-form select,
+  .wo-inline-form button,
+  .wo-inline-form textarea {
+    width: 100%;
+    max-width: none;
+  }
+
+  .wo-money-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .wo-rail {
+    position: static;
+  }
+
+  .wo-shortcuts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+  }
+
+  .wo-edit-form {
+    grid-template-columns: 1fr;
+  }
+
+  .cases-table {
+    display: none;
+  }
+
+  .cases-cards {
+    display: grid;
+    gap: 10px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .cases-cards {
+    display: none;
+  }
+}

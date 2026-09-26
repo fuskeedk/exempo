@@ -69,7 +69,42 @@ export default async function CasesPage({
           Filtrér
         </button>
       </form>
-      <Card className="overflow-x-auto p-0">
+      <div className="cases-cards">
+        {cases.length === 0 ? (
+          <p className="rounded-2xl border border-line bg-paper-2 px-5 py-8 text-sm text-muted">
+            Ingen sager matcher filteret.
+          </p>
+        ) : null}
+        {cases.map((sag) => {
+          const economics = caseEconomics(sag);
+          return (
+            <Link
+              key={sag.id}
+              href={`/sager/${sag.id}`}
+              className="block rounded-2xl border border-line bg-paper-2 p-4"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="font-medium">{sag.caseNumber}</p>
+                  <p className="text-sm text-muted">{sag.title}</p>
+                </div>
+                <StatusBadge state={sag.state} />
+              </div>
+              <p className="mt-2 text-sm">
+                {sag.customerName}
+                <span className="block text-muted">
+                  {sag.customerAddress}, {sag.customerCity}
+                </span>
+              </p>
+              <p className="mt-2 text-sm text-muted">{sag.assignedTo?.name ?? "—"}</p>
+              <div className="mt-2">
+                <CoverageBadge value={economics.coverage} />
+              </div>
+            </Link>
+          );
+        })}
+      </div>
+      <Card className="cases-table overflow-x-auto p-0">
         <table className="w-full text-left text-sm">
           <thead className="text-xs uppercase tracking-wider text-muted">
             <tr>
