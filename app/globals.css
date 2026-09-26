@@ -119,19 +119,30 @@ a {
     align-self: flex-start;
   }
 
+  .wo-strip,
+  .wo-pipeline,
+  .wo-kpis,
+  .wo-main,
+  .wo-layout {
+    min-width: 0;
+    max-width: 100%;
+  }
+
   .wo-strip {
     flex-direction: column;
     padding: 10px;
   }
 
   .wo-pipeline {
-    min-width: 0;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     width: 100%;
   }
 
   .wo-chevron {
-    flex: 1 1 calc(50% - 6px);
+    flex: none;
     min-width: 0;
+    width: 100%;
   }
 
   .wo-chevron summary,
