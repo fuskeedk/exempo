@@ -23,14 +23,10 @@ Brug **ikke** `lars@exempo.dk` i Expo Go eller Expo CLI. Den bruger findes kun i
 
 1. Installer [Node.js](https://nodejs.org/) og Xcode Command Line Tools.
 2. Opret en gratis Expo-konto på [expo.dev/signup](https://expo.dev/signup) med din egen e-mail.
-3. På Mac:
+3. På Mac, kopiér **hele linjen** ind i Terminal (den går ind i mappen, henter koden og starter Expo):
 
 ```bash
-git clone -b cursor/sagsbehandling-fsm-604a https://github.com/fuskeedk/exempo.git
-cd exempo/mobile
-npm install
-npx expo login
-npx expo start
+cd ~ && (test -d exempo/.git || git clone -b cursor/sagsbehandling-fsm-604a https://github.com/fuskeedk/exempo.git) && cd ~/exempo/mobile && git pull origin cursor/sagsbehandling-fsm-604a && npm install && npx expo login && npx expo start
 ```
 
 4. Installer **Expo Go** fra App Store på iPhonen, og log ind der med **samme** Expo-konto.
