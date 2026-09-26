@@ -41,7 +41,7 @@ Zip-filen ligger i `dist/Exempo-windows.zip`. Windows kan advare om en usigneret
 
 iPhone-appen **er hjemmesiden**. Åbn [https://exempo.jbnet.dk](https://exempo.jbnet.dk) i Safari — kalender, arbejdssedler, Min dag og resten er de samme som på computeren. Del → Tilføj til hjemmeskærm, hvis du vil have et ikon.
 
-`/mobil` sender videre til Min dag. Den native skal i `mobile/` (bundle `dk.exempo.app`) åbner samme site i WebView til App Store. Se `mobile/README.md`.
+Brug **https://exempo.jbnet.dk** — ikke `/mobil`. Den gamle `/mobil`-kopi med “Start tid” er slået fra og sender videre til hjemmesiden. Den native skal i `mobile/` åbner samme site i WebView til App Store. Se `mobile/README.md`.
 
 Log ind som `lars@exempo.dk` / `exempo123`.
 

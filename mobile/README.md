@@ -12,7 +12,7 @@ Log ind som på computeren. Felt-menuen er den samme: Min dag (kalender/uge), ti
 
 Tilføj til hjemmeskærm: Del → Tilføj til hjemmeskærm.
 
-`https://exempo.jbnet.dk/mobil` sender dig videre til Min dag på den rigtige side.
+Brug **https://exempo.jbnet.dk** — ikke `/mobil`. Den gamle kopi med “Start tid” er slået fra.
 
 ## Native skal (App Store)
 
