@@ -88,6 +88,9 @@
     "extra": {
       "supportsDemoMode": true,
       "apiUrl": "https://exempo.jbnet.dk"
+    },
+    "experiments": {
+      "baseUrl": "/mobil"
     }
   }
 }

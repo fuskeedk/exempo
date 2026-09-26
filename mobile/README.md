@@ -23,13 +23,15 @@ Brug **ikke** `lars@exempo.dk` i Expo Go eller Expo CLI. Den bruger findes kun i
 
 1. Installer [Node.js](https://nodejs.org/) og Xcode Command Line Tools.
 2. Opret en gratis Expo-konto på [expo.dev/signup](https://expo.dev/signup) med din egen e-mail.
-3. På Mac, kopiér **hele linjen** ind i Terminal (den går ind i mappen, henter koden og starter Expo):
+3. **Prøv på iPhone uden Expo Go:** åbn Safari og gå til [https://exempo.jbnet.dk/mobil](https://exempo.jbnet.dk/mobil). Log ind med `lars@exempo.dk` / `exempo123`. Del → Tilføj til hjemmeskærm, hvis du vil have et ikon.
+
+Expo Go-tunnelen (`failed to start tunnel` / `request timed out`) virker ofte ikke på almindeligt Wi-Fi. Den hostede app bruger ikke din Mac.
+
+4. På Mac, hvis du vil køre den lokalt i browseren (ingen tunnel):
 
 ```bash
-cd ~ && (test -d exempo/.git || git clone -b cursor/sagsbehandling-fsm-604a https://github.com/fuskeedk/exempo.git) && cd ~/exempo/mobile && git pull origin cursor/sagsbehandling-fsm-604a && npm install && npx expo login && npx expo start --tunnel --clear
+cd ~ && (test -d exempo/.git || git clone -b cursor/sagsbehandling-fsm-604a https://github.com/fuskeedk/exempo.git) && cd ~/exempo/mobile && git pull origin cursor/sagsbehandling-fsm-604a && npm install && npx expo start --web --offline --clear
 ```
-
-Vent til terminalen skriver at tunnelen er klar, og scan **den nye** QR-kode i Expo Go. `request timed out` betyder at iPhonen ikke kunne nå Mac’en direkte (forskelligt Wi-Fi, gæstenet eller firewall). Tunnel går udenom det.
 
 4. Installer **Expo Go** fra App Store på iPhonen, og log ind der med **samme** Expo-konto.
 5. Scan QR-koden. På den grønne Exempo-skærm logger du ind med `lars@exempo.dk` / `exempo123`.

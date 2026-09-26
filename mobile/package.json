@@ -4,8 +4,10 @@
   "private": true,
   "main": "index.ts",
   "scripts": {
-    "start": "expo start --tunnel --clear",
-    "start:lan": "expo start --offline --lan --clear",
+    "start": "expo start --web --offline --clear",
+    "start:go": "expo start --lan --offline --clear",
+    "start:tunnel": "expo start --tunnel --clear",
+    "export:web": "expo export --platform web --output-dir dist",
     "ios": "expo start --ios",
     "android": "expo start --android",
     "web": "expo start --web",

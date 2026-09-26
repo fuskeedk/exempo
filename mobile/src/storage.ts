@@ -1,3 +1,4 @@
+import { Platform } from "react-native";
 import * as SecureStore from "expo-secure-store";
 import { resolveApiUrl } from "./config";
 
@@ -5,7 +6,18 @@ const TOKEN = "exempo_token";
 const API = "exempo_api_url";
 const DEMO = "exempo_demo";
 
+function webStorage() {
+  try {
+    if (Platform.OS === "web" && typeof localStorage !== "undefined") return localStorage;
+  } catch {
+    /* private mode */
+  }
+  return null;
+}
+
 async function read(key: string) {
+  const web = webStorage();
+  if (web) return web.getItem(key);
   try {
     return await SecureStore.getItemAsync(key);
   } catch {
@@ -14,14 +26,24 @@ async function read(key: string) {
 }
 
 async function write(key: string, value: string) {
+  const web = webStorage();
+  if (web) {
+    web.setItem(key, value);
+    return;
+  }
   try {
     await SecureStore.setItemAsync(key, value);
   } catch {
-    /* web / simulator without keychain */
+    /* native simulator without keychain */
   }
 }
 
 async function remove(key: string) {
+  const web = webStorage();
+  if (web) {
+    web.removeItem(key);
+    return;
+  }
   try {
     await SecureStore.deleteItemAsync(key);
   } catch {

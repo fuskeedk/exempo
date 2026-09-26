@@ -45,8 +45,12 @@ Feltappen ligger i `mobile/` (Expo, bundle ID `dk.exempo.app`). Den taler med ht
 
 Hent koden fra GitHub (ikke fra webserveren). Expo Go og Expo CLI skal bruge **din egen** gratis [Expo-konto](https://expo.dev/signup) — ikke `lars@exempo.dk`. Den grønne login-skærm i appen er Exempo.
 
+Åbn [https://exempo.jbnet.dk/mobil](https://exempo.jbnet.dk/mobil) i Safari på iPhonen. Ingen Expo Go og ingen tunnel.
+
+Lokalt på Mac:
+
 ```bash
-cd ~ && (test -d exempo/.git || git clone -b cursor/sagsbehandling-fsm-604a https://github.com/fuskeedk/exempo.git) && cd ~/exempo/mobile && git pull origin cursor/sagsbehandling-fsm-604a && npm install && npx expo login && npx expo start --tunnel --clear
+cd ~ && (test -d exempo/.git || git clone -b cursor/sagsbehandling-fsm-604a https://github.com/fuskeedk/exempo.git) && cd ~/exempo/mobile && git pull origin cursor/sagsbehandling-fsm-604a && npm install && npx expo start --web --offline --clear
 ```
 
 Log ind som `lars@exempo.dk` / `exempo123`, eller tryk **Prøv demo**.
