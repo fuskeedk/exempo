@@ -1,4 +1,5 @@
 import * as SecureStore from "expo-secure-store";
+import { resolveApiUrl } from "./config";
 
 const TOKEN = "exempo_token";
 const API = "exempo_api_url";
@@ -32,7 +33,7 @@ export async function loadSession() {
   const [token, apiUrl, demo] = await Promise.all([read(TOKEN), read(API), read(DEMO)]);
   return {
     token: token ?? "",
-    apiUrl: apiUrl ?? process.env.EXPO_PUBLIC_API_URL ?? "https://exempo.jbnet.dk",
+    apiUrl: resolveApiUrl(apiUrl || process.env.EXPO_PUBLIC_API_URL),
     demo: demo === "1",
   };
 }

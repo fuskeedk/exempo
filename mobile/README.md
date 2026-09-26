@@ -8,20 +8,35 @@ Appen kalder `/api/mobile/*` over HTTPS. Standardserveren er `https://exempo.jbn
 
 Ja. Du kan køre den på Mac, før den kommer i App Store.
 
+### To slags login (vigtigt)
+
+Expo og Exempo er ikke det samme. Expo-beskeden *you will need to be signed into Expo Go and Expo CLI* handler kun om Expo-kontoen.
+
+| Hvor | Konto | Kode |
+| --- | --- | --- |
+| expo.dev, `npx expo login` og Expo Go | Din **egen** mail (gratis på [expo.dev/signup](https://expo.dev/signup)) | Din Expo-adgangskode |
+| Den grønne Exempo-skærm i appen | `lars@exempo.dk` | `exempo123` |
+
+Brug **ikke** `lars@exempo.dk` i Expo Go eller Expo CLI. Den bruger findes kun i Exempo.
+
 ### 1. Hurtigst: Expo Go (ingen betalt udviklerkonto)
 
 1. Installer [Node.js](https://nodejs.org/) og Xcode Command Line Tools.
-2. På Mac:
+2. Opret en gratis Expo-konto på [expo.dev/signup](https://expo.dev/signup) med din egen e-mail.
+3. På Mac:
 
 ```bash
 git clone -b cursor/sagsbehandling-fsm-604a https://github.com/fuskeedk/exempo.git
 cd exempo/mobile
 npm install
+npx expo login
 npx expo start
 ```
 
-3. Installer **Expo Go** fra App Store på iPhonen.
-4. Scan QR-koden. Log ind med `lars@exempo.dk` / `exempo123` (eller din rigtige bruger). Serveradressen er allerede `https://exempo.jbnet.dk`.
+4. Installer **Expo Go** fra App Store på iPhonen, og log ind der med **samme** Expo-konto.
+5. Scan QR-koden. På den grønne Exempo-skærm logger du ind med `lars@exempo.dk` / `exempo123`.
+
+Mac og iPhone skal være på samme Wi-Fi, ellers tryk `s` i terminalen og vælg tunnel (kræver også Expo-login).
 
 ### 2. iPhone-simulator i Xcode (gratis Apple-id)
 

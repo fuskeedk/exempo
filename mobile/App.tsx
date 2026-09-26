@@ -37,6 +37,7 @@ import { ScanScreen } from "./src/screens/ScanScreen";
 import { SettingsScreen } from "./src/screens/SettingsScreen";
 import { TabBar } from "./src/screens/TabBar";
 import { TimeScreen } from "./src/screens/TimeScreen";
+import { DEFAULT_API_URL, resolveApiUrl } from "./src/config";
 import { clearSession, loadSession, saveApiUrl, saveToken, setDemoMode } from "./src/storage";
 import { colors } from "./src/theme";
 import type { CaseDetail, Customer, DayPayload, Route, Tab } from "./src/types";
@@ -45,7 +46,7 @@ SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
 export default function App() {
   const [ready, setReady] = useState(false);
-  const [apiUrl, setApiUrl] = useState("https://exempo.jbnet.dk");
+  const [apiUrl, setApiUrl] = useState(DEFAULT_API_URL);
   const [token, setToken] = useState("");
   const [demo, setDemo] = useState(false);
   const [day, setDay] = useState<DayPayload | null>(null);
@@ -100,7 +101,9 @@ export default function App() {
   useEffect(() => {
     (async () => {
       const session = await loadSession();
-      setApiUrl(session.apiUrl);
+      const url = resolveApiUrl(session.apiUrl);
+      setApiUrl(url);
+      if (!session.apiUrl) await saveApiUrl(url);
       setToken(session.token);
       setDemo(session.demo);
       try {
@@ -109,11 +112,11 @@ export default function App() {
           setDay(payload);
           setCustomers(payload.customers ?? []);
           setRoute({ name: "app", tab: "day" });
-        } else if (session.token && session.apiUrl) {
-          const payload = await fetchDay(session.apiUrl, session.token);
+        } else if (session.token) {
+          const payload = await fetchDay(url, session.token);
           setDay(payload);
           try {
-            setCustomers(await fetchCustomers(session.apiUrl, session.token));
+            setCustomers(await fetchCustomers(url, session.token));
           } catch {
             setCustomers(payload.customers ?? []);
           }
@@ -143,12 +146,15 @@ export default function App() {
 
   async function handleLogin(email: string, password: string) {
     await wrap(async () => {
-      const result = await login(apiUrl, email, password);
+      const url = resolveApiUrl(apiUrl);
+      await saveApiUrl(url);
+      setApiUrl(url);
+      const result = await login(url, email, password);
       await setDemoMode(false);
       await saveToken(result.token);
       setDemo(false);
       setToken(result.token);
-      await refresh(result.token, false, apiUrl);
+      await refresh(result.token, false, url);
       setRoute({ name: "app", tab: "day" });
     });
   }

@@ -32,7 +32,10 @@ export function LoginScreen({
           </Text>
         </View>
         <View style={styles.card}>
-          <Text style={styles.h2}>Log ind</Text>
+          <Text style={styles.h2}>Log ind i Exempo</Text>
+          <Text style={styles.hint}>
+            Expo Go-kontoen er kun til at åbne projektet. Her skal du bruge Exempo — ikke din Expo-mail.
+          </Text>
           <ErrorBanner message={error} />
           <Field
             label="E-mail"
@@ -52,9 +55,7 @@ export function LoginScreen({
           <Button title="Fortsæt" onPress={() => onLogin(email, password)} loading={busy} />
           <View style={styles.gap} />
           <Button title="Prøv demo" onPress={onDemo} variant="secondary" disabled={busy} />
-          <Text style={styles.meta}>
-            Server: {apiUrl || "ikke sat — åbn Indstillinger eller brug demo"}
-          </Text>
+          <Text style={styles.meta}>Server: {apiUrl || "https://exempo.jbnet.dk"}</Text>
           <Button title="Indstillinger" onPress={onSettings} variant="secondary" />
         </View>
       </ScrollView>
@@ -72,7 +73,8 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     padding: 20,
   },
-  h2: { fontSize: 24, fontWeight: "700", color: colors.ink, marginBottom: 12 },
+  h2: { fontSize: 24, fontWeight: "700", color: colors.ink, marginBottom: 8 },
+  hint: { color: colors.muted, fontSize: 14, lineHeight: 20, marginBottom: 12 },
   gap: { height: 10 },
   meta: { color: colors.muted, fontSize: 13, marginVertical: 12 },
 });

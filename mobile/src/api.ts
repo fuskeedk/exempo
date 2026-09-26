@@ -1,8 +1,5 @@
+import { describeNetworkError, resolveApiUrl } from "./config";
 import type { CaseDetail, Customer, DayPayload, SessionUser } from "./types";
-
-function trimUrl(url: string) {
-  return url.trim().replace(/\/+$/, "");
-}
 
 async function parseError(response: Response) {
   const data = (await response.json().catch(() => null)) as { error?: string } | null;
@@ -14,16 +11,22 @@ export async function request<T>(
   path: string,
   init: RequestInit & { token?: string } = {},
 ): Promise<T> {
-  const base = trimUrl(apiUrl);
-  if (!base) throw new Error("Sæt serveradressen under Indstillinger.");
+  const base = resolveApiUrl(apiUrl);
   const headers = new Headers(init.headers);
   if (init.token) headers.set("Authorization", `Bearer ${init.token}`);
   if (init.body && !(init.body instanceof FormData) && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
-  const response = await fetch(`${base}${path}`, { ...init, headers });
-  if (!response.ok) throw new Error(await parseError(response));
-  return (await response.json()) as T;
+  try {
+    const response = await fetch(`${base}${path}`, { ...init, headers });
+    if (!response.ok) throw new Error(await parseError(response));
+    return (await response.json()) as T;
+  } catch (error) {
+    if (error instanceof Error && /Fejl |Forkert |Log ind|Sessionen|Sæt server/.test(error.message)) {
+      throw error;
+    }
+    throw new Error(describeNetworkError(error));
+  }
 }
 
 export async function checkHealth(apiUrl: string) {
