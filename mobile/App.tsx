@@ -273,8 +273,9 @@ export default function App() {
         onLogout={handleLogout}
         onSave={async (url) => {
           await wrap(async () => {
-            await saveApiUrl(url);
-            setApiUrl(url.trim());
+            const next = resolveApiUrl(url);
+            await saveApiUrl(next);
+            setApiUrl(next);
             setStatus("Adressen er gemt.");
           });
         }}
