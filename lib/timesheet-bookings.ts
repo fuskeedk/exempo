@@ -46,6 +46,17 @@ export function unlinkCaseId(fromCaseId?: string | null, nextCaseId?: string | n
 }
 
 /**
+ * When a standalone (ikke-ordrelateret) activity is pointed at a sag:
+ * keep registered time and attach it, drop a mere planned placeholder.
+ */
+export function adoptStandaloneActivity(
+  status?: string | null,
+  timeEntryId?: string | null,
+): "attach" | "remove" {
+  return status === "REGISTRERET" || Boolean(timeEntryId) ? "attach" : "remove";
+}
+
+/**
  * A case board-row is covered when an activity occupies the same slot —
  * either linked to that case, or left as ikke-ordrelateret after a conversion.
  */

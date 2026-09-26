@@ -1,6 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
+  adoptStandaloneActivity,
   dropCaseJobsCoveredByActivity,
   isCaseCoveredByActivity,
   uniqueTimesheetJobs,
@@ -106,6 +107,18 @@ describe("uniqueTimesheetJobs", () => {
       { id: "case-4", source: "case", ...slot },
     ]);
     assert.equal(jobs.length, 1);
+  });
+});
+
+describe("adoptStandaloneActivity", () => {
+  it("attaches registered time to the chosen sag", () => {
+    assert.equal(adoptStandaloneActivity("REGISTRERET", "entry-1"), "attach");
+    assert.equal(adoptStandaloneActivity("PLANLAGT", "entry-1"), "attach");
+  });
+
+  it("removes a planned placeholder so the sag owns the slot", () => {
+    assert.equal(adoptStandaloneActivity("PLANLAGT", null), "remove");
+    assert.equal(adoptStandaloneActivity("PLANLAGT"), "remove");
   });
 });
 
