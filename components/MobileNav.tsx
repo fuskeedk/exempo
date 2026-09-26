@@ -342,8 +342,10 @@ export function MobileNav({
               ) : null}
             </nav>
             <div className="border-t border-line pb-[env(safe-area-inset-bottom)]">
-              {help ? <div className="px-5 py-3 text-sm text-pine">{help}</div> : null}
-              <div className="grid grid-cols-2">
+              {help ? (
+                <div className="flex items-center gap-3 px-5 py-3.5 text-[16px] text-ink">{help}</div>
+              ) : null}
+              <div className="grid grid-cols-2 border-t border-line">
                 <Link href="/stoette" className="flex items-center justify-center gap-2 py-4 text-sm text-muted">
                   <Icon name="support" size={18} />
                   Support
@@ -389,8 +391,8 @@ export function MobileNav({
               <Link
                 key={tab.href}
                 href={tab.href}
-                className={`flex flex-col items-center gap-1 py-2.5 text-[11px] ${
-                  active ? "font-semibold text-pine" : "text-muted"
+                className={`flex flex-col items-center gap-1 border-t-2 py-2 text-[11px] ${
+                  active ? "border-pine font-semibold text-pine" : "border-transparent text-muted"
                 }`}
               >
                 <Icon name={tab.icon} size={22} />
@@ -401,7 +403,9 @@ export function MobileNav({
           <button
             type="button"
             onClick={() => setMenuOpen(true)}
-            className="flex flex-col items-center gap-1 py-2.5 text-[11px] text-muted"
+            className={`flex flex-col items-center gap-1 border-t-2 py-2 text-[11px] ${
+              menuOpen ? "border-pine font-semibold text-pine" : "border-transparent text-muted"
+            }`}
           >
             <Icon name="menu" size={22} />
             Menu
