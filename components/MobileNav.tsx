@@ -383,7 +383,7 @@ export function MobileNav({
       <nav className="no-print fixed inset-x-0 bottom-0 z-40 border-t border-line bg-paper-2 pb-[env(safe-area-inset-bottom)]">
         <div
           className="grid"
-          style={{ gridTemplateColumns: `repeat(${tabs.length + 1}, minmax(0, 1fr))` }}
+          style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}
         >
           {tabs.map((tab) => {
             const active = isActive(pathname, tab.href, tab.exact);
@@ -400,16 +400,6 @@ export function MobileNav({
               </Link>
             );
           })}
-          <button
-            type="button"
-            onClick={() => setMenuOpen(true)}
-            className={`flex flex-col items-center gap-1 border-t-2 py-2 text-[11px] ${
-              menuOpen ? "border-pine font-semibold text-pine" : "border-transparent text-muted"
-            }`}
-          >
-            <Icon name="menu" size={22} />
-            Menu
-          </button>
         </div>
       </nav>
     </div>
