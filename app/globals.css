@@ -311,3 +311,96 @@ a {
     display: none;
   }
 }
+
+.act-search {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+.act-search input,
+.act-dialog-input {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 8px 10px;
+  background: #fff;
+  font-size: 16px;
+  line-height: 1.3;
+}
+
+.act-dialog-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 16px;
+  padding-top: max(16px, env(safe-area-inset-top));
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.act-dialog {
+  width: 100%;
+  max-width: 28rem;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--paper-2);
+}
+
+.act-dialog-head {
+  padding: 12px 16px;
+  background: var(--pine);
+  color: #f4efe4;
+  border-radius: 16px 16px 0 0;
+}
+
+.act-dialog-body {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  font-size: 16px;
+}
+
+.act-dialog-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.act-dialog-btn {
+  border: 1px solid #ccc;
+  border-radius: 999px;
+  background: #fff;
+  padding: 10px 16px;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+@media (max-width: 720px) {
+  .act-dialog-scrim {
+    align-items: stretch;
+    padding: 0;
+  }
+
+  .act-dialog {
+    max-width: none;
+    min-height: 100%;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .act-dialog-head {
+    border-radius: 0;
+  }
+
+  .act-dialog-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
