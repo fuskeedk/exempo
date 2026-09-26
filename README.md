@@ -43,8 +43,11 @@ Feltappen ligger i `mobile/` (Expo, bundle ID `dk.exempo.app`). Den taler med ht
 
 **Ja — du kan prøve den på din MacBook.** Hurtigst er Expo Go. Med Xcode kører den i iPhone-simulator. Apple Developer Program bruges til at installere på din iPhone, TestFlight og App Store. Se `mobile/README.md`.
 
+Hent koden fra GitHub (ikke fra webserveren). På en ny Mac:
+
 ```bash
-cd mobile
+git clone -b cursor/sagsbehandling-fsm-604a https://github.com/fuskeedk/exempo.git
+cd exempo/mobile
 npm install
 npx expo start
 ```

@@ -14,7 +14,7 @@ Ja. Du kan køre den på Mac, før den kommer i App Store.
 2. På Mac:
 
 ```bash
-git clone https://github.com/fuskeedk/exempo.git
+git clone -b cursor/sagsbehandling-fsm-604a https://github.com/fuskeedk/exempo.git
 cd exempo/mobile
 npm install
 npx expo start
