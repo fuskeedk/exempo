@@ -10,6 +10,7 @@ import { moveTimesheetActivity, resizeTimesheetActivity } from "@/app/actions/fi
 import { ActivityDialog, type ActivityCaseOption, type ActivityDraft } from "@/components/ActivityDialog";
 import { BookingResizeHandle } from "@/components/BookingResizeHandle";
 import { CaseOpenLink } from "@/components/CaseOpenLink";
+import { TimesheetJobMenu } from "@/components/TimesheetJobMenu";
 import {
   billedHours,
   formatHoursDa,
@@ -98,7 +99,9 @@ export function TimesheetWeek({
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [draft, setDraft] = useState<ActivityDraft | null>(null);
+  const [menu, setMenu] = useState<{ day: CalendarDay; job: TimesheetJob } | null>(null);
   const swipe = useMinDagSwipe();
+  const phoneMenu = usePhoneJobMenu();
   const swipeRef = useRef<HTMLDivElement>(null);
   const ignoreScroll = useRef(false);
   const hours = timesheetHours();
@@ -422,7 +425,13 @@ export function TimesheetWeek({
                     height={height}
                     onDrop={dropOn}
                     onAdd={openSlot}
-                    onEdit={openJob}
+                    onEdit={(day, job) => {
+                      if (phoneMenu) {
+                        setMenu({ day, job });
+                        return;
+                      }
+                      openJob(day, job);
+                    }}
                     onResize={resizeJob}
                   />
                 </div>
@@ -507,6 +516,19 @@ export function TimesheetWeek({
           </ul>
         </div>
       ) : null}
+      {menu ? (
+        <TimesheetJobMenu
+          day={menu.day}
+          job={menu.job}
+          forUserId={workerId}
+          onEdit={() => {
+            const current = menu;
+            setMenu(null);
+            openJob(current.day, current.job);
+          }}
+          onClose={() => setMenu(null)}
+        />
+      ) : null}
       {draft ? (
         <ActivityDialog
           draft={draft}
@@ -532,6 +554,18 @@ function useMinDagSwipe() {
     return () => media.removeEventListener("change", apply);
   }, []);
   return swipe;
+}
+
+function usePhoneJobMenu() {
+  const [phone, setPhone] = useState(false);
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 900px)");
+    const apply = () => setPhone(media.matches);
+    apply();
+    media.addEventListener("change", apply);
+    return () => media.removeEventListener("change", apply);
+  }, []);
+  return phone;
 }
 
 function DayHead({ day, hours, href }: { day: CalendarDay; hours: number; href: string }) {
