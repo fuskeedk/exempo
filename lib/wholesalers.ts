@@ -7,6 +7,7 @@ export const DEFAULT_WHOLESALERS = [
   { name: "Davidsens Tømmerhandel A/S", loginUrl: "https://www.davidsens.dk" },
   { name: "Lemvigh-Müller A/S", loginUrl: "https://www.lemu.dk" },
   { name: "Optimera", loginUrl: "https://www.optimera.dk" },
+  { name: "Solar A/S", loginUrl: "https://www.solar.dk" },
   { name: "STARK", loginUrl: "https://www.stark.dk" },
   { name: "Würth", loginUrl: "https://www.wuerth.dk" },
   { name: "XL-Byg", loginUrl: "https://www.xl-byg.dk" },
