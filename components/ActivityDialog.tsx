@@ -121,6 +121,7 @@ export function ActivityDialog({
             ? looksLikeFullDay(draft.startHour, draft.startMinute, draft.endHour, draft.endMinute)
             : allDay,
           caseId: kind === "FRAVAER" ? "" : caseId.trim(),
+          fromCaseId: draft.caseId || undefined,
           note,
           forUserId,
           absenceType,
@@ -168,43 +169,42 @@ export function ActivityDialog({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/35 px-4 py-16" onClick={onClose}>
-      <div
-        className="w-full max-w-md overflow-visible rounded-2xl border border-line bg-paper-2 shadow-[0_16px_40px_rgba(27,24,20,0.18)]"
-        onClick={(event) => event.stopPropagation()}
-      >
-        <div className="bg-pine px-4 py-3 text-[#f4efe4]">
+    <div className="act-dialog-scrim" onClick={onClose}>
+      <div className="act-dialog" onClick={(event) => event.stopPropagation()}>
+        <div className="act-dialog-head">
           <h2 className="font-serif text-xl tracking-tight">Aktivitet</h2>
         </div>
-        <div className="space-y-3 p-4 text-sm">
+        <div className="act-dialog-body">
           {error ? <p className="rounded-md bg-[#f3d7d4] px-3 py-2 text-[#7c2f2a]">{error}</p> : null}
-          <label className="flex flex-wrap items-center gap-3">
-            <span className="w-24">Dato:</span>
-            <input
-              type="date"
-              value={date}
-              onChange={(event) => {
-                const next = event.target.value;
-                setDate(next);
-                if (allDay) applyFullDay(next);
-              }}
-              className="rounded border border-[#ccc] px-2 py-1"
-            />
-            <label className="flex items-center gap-1.5">
-              <input type="checkbox" checked={allDay} onChange={(event) => toggleAllDay(event.target.checked)} />
-              Hel dag
-            </label>
+          <label className="act-dialog-row">
+            <span>Dato</span>
+            <div className="act-dialog-controls">
+              <input
+                type="date"
+                value={date}
+                onChange={(event) => {
+                  const next = event.target.value;
+                  setDate(next);
+                  if (allDay) applyFullDay(next);
+                }}
+                className="act-dialog-input"
+              />
+              <label className="act-dialog-check">
+                <input type="checkbox" checked={allDay} onChange={(event) => toggleAllDay(event.target.checked)} />
+                Hel dag
+              </label>
+            </div>
           </label>
           {allDay ? (
-            <p className="pl-24 text-xs text-muted">
+            <p className="act-dialog-hint">
               {formatHoursDa(billedHours(fullDaySlot(parseDayParam(date)).start, fullDaySlot(parseDayParam(date)).end, true))}{" "}
               time på sagen ({formatHoursDa(FULL_DAY_PAUSE_HOURS)} t pause).
             </p>
           ) : null}
           {isPlanned ? (
-            <fieldset className="space-y-1.5 pl-24 text-sm">
+            <fieldset className="act-dialog-hint space-y-1.5">
               <legend className="sr-only">Registrering af planlagt tid</legend>
-              <label className="flex items-center gap-1.5">
+              <label className="act-dialog-check">
                 <input
                   type="radio"
                   name="planned-duration"
@@ -220,7 +220,7 @@ export function ActivityDialog({
                 />
                 Brug planlagt tid ({formatHoursDa(plannedHours)} t)
               </label>
-              <label className="flex items-center gap-1.5">
+              <label className="act-dialog-check">
                 <input
                   type="radio"
                   name="planned-duration"
@@ -231,42 +231,44 @@ export function ActivityDialog({
               </label>
             </fieldset>
           ) : null}
-          <label className="flex items-center gap-3">
-            <span className="w-24">Start:</span>
+          <label className="act-dialog-row">
+            <span>Start</span>
             <TimeSelect hour={startHour} minute={startMinute} disabled={timesLocked} onHour={setStartHour} onMinute={setStartMinute} />
           </label>
-          <label className="flex items-center gap-3">
-            <span className="w-24">Slut:</span>
+          <label className="act-dialog-row">
+            <span>Slut</span>
             <TimeSelect hour={endHour} minute={endMinute} disabled={timesLocked} onHour={setEndHour} onMinute={setEndMinute} />
           </label>
-          <fieldset className="flex items-center gap-3">
-            <span className="w-24">Reg. type:</span>
-            <label className="flex items-center gap-1.5">
-              <input
-                type="radio"
-                name="kind"
-                checked={kind === "ARBEJDE"}
-                onChange={() => setKind("ARBEJDE")}
-              />
-              Arbejdstid
-            </label>
-            <label className="flex items-center gap-1.5">
-              <input
-                type="radio"
-                name="kind"
-                checked={kind === "FRAVAER"}
-                onChange={() => setKind("FRAVAER")}
-              />
-              Fravær
-            </label>
+          <fieldset className="act-dialog-row">
+            <span>Reg. type</span>
+            <div className="act-dialog-controls">
+              <label className="act-dialog-check">
+                <input
+                  type="radio"
+                  name="kind"
+                  checked={kind === "ARBEJDE"}
+                  onChange={() => setKind("ARBEJDE")}
+                />
+                Arbejdstid
+              </label>
+              <label className="act-dialog-check">
+                <input
+                  type="radio"
+                  name="kind"
+                  checked={kind === "FRAVAER"}
+                  onChange={() => setKind("FRAVAER")}
+                />
+                Fravær
+              </label>
+            </div>
           </fieldset>
           {kind === "FRAVAER" ? (
-            <label className="flex items-center gap-3">
-              <span className="w-24">Fraværstype:</span>
+            <label className="act-dialog-row">
+              <span>Fraværstype</span>
               <select
                 value={absenceType}
                 onChange={(event) => setAbsenceType(event.target.value as AbsenceType)}
-                className="min-w-0 flex-1 rounded border border-[#ccc] px-2 py-1"
+                className="act-dialog-input"
               >
                 {ABSENCE_TYPES.map((type) => (
                   <option key={type} value={type}>
@@ -276,40 +278,40 @@ export function ActivityDialog({
               </select>
             </label>
           ) : (
-            <div className="flex items-start gap-3">
-              <span className="w-24 pt-1.5 leading-tight">Tilbud og ordrer:</span>
+            <div className="act-dialog-row">
+              <span>Tilbud og ordrer</span>
               <CaseSearch cases={cases} value={caseId} onChange={setCaseId} />
             </div>
           )}
-          <label className="block">
-            <span className="mb-1 inline-block w-24">Note:</span>
+          <label className="act-dialog-row act-dialog-row--stack">
+            <span>Note</span>
             <textarea
               value={note}
               onChange={(event) => setNote(event.target.value.slice(0, 1500))}
               rows={5}
-              className="mt-1 w-full rounded border border-[#ccc] px-2 py-1"
+              className="act-dialog-input"
             />
-            <p className="text-right text-xs text-muted">{note.length} / 1500</p>
+            <p className="act-dialog-count">{note.length} / 1500</p>
           </label>
-          <div className="flex flex-wrap items-center justify-between gap-2 pt-2">
+          <div className="act-dialog-actions">
             {canDelete ? (
               <button
                 type="button"
                 disabled={pending}
                 onClick={remove}
-                className="rounded-full border border-[var(--rust)] px-4 py-2 text-sm font-medium text-[var(--rust)] disabled:opacity-60"
+                className="act-dialog-btn act-dialog-btn--danger"
               >
                 Slet
               </button>
             ) : (
               <span />
             )}
-            <div className="flex flex-wrap justify-end gap-2">
+            <div className="act-dialog-actions-main">
               <button
                 type="button"
                 disabled={pending}
                 onClick={() => submit("plan")}
-                className="rounded-full bg-pine px-4 py-2 text-sm font-medium text-[#f4efe4] disabled:opacity-60"
+                className="act-dialog-btn act-dialog-btn--primary"
               >
                 Planlæg tid
               </button>
@@ -317,14 +319,14 @@ export function ActivityDialog({
                 type="button"
                 disabled={pending}
                 onClick={() => submit("register")}
-                className="rounded-full bg-pine px-4 py-2 text-sm font-medium text-[#f4efe4] disabled:opacity-60"
+                className="act-dialog-btn act-dialog-btn--primary"
               >
                 Registrer tid
               </button>
               <button
                 type="button"
                 onClick={onClose}
-                className="rounded-sm border border-[#ccc] bg-white px-4 py-2 text-sm"
+                className="act-dialog-btn"
               >
                 Annullér
               </button>
@@ -521,7 +523,7 @@ function TimeSelect({
         value={hour}
         disabled={disabled}
         onChange={(event) => onHour(Number(event.target.value))}
-        className="rounded border border-[#ccc] px-2 py-1"
+        className="act-dialog-input"
       >
         {HOURS.map((item) => (
           <option key={item} value={item}>
@@ -534,7 +536,7 @@ function TimeSelect({
         value={minute}
         disabled={disabled}
         onChange={(event) => onMinute(Number(event.target.value))}
-        className="rounded border border-[#ccc] px-2 py-1"
+        className="act-dialog-input"
       >
         {MINUTES.map((item) => (
           <option key={item} value={item}>
