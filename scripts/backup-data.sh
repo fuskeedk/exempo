@@ -7,6 +7,7 @@ KEEP_DAYS="${BACKUP_KEEP_DAYS:-14}"
 STAMP="$(date +%Y-%m-%d)"
 DEST="${BACKUP_DIR}/${STAMP}"
 
+cd /
 mkdir -p "$DEST"
 
 copy_db() {
