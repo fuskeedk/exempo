@@ -928,18 +928,29 @@ a {
   color: #fff;
 }
 
+.wo-strip,
+.wo-pipeline {
+  overflow: visible;
+}
+
 .wo-chevron-menu {
   position: absolute;
-  z-index: 8;
+  z-index: 20;
   left: 0;
   right: auto;
   min-width: 11.5rem;
+  max-width: min(22rem, calc(100vw - 24px));
   margin-top: 4px;
   padding: 4px 0;
   background: #fff;
   border: 1px solid #e8e4de;
   border-radius: 2px;
   box-shadow: 0 8px 22px rgba(32, 28, 24, 0.12);
+}
+
+.wo-chevron:last-child .wo-chevron-menu {
+  left: auto;
+  right: 0;
 }
 
 .wo-chevron-menu button,
@@ -957,6 +968,15 @@ a {
   color: #3f3a35;
   text-decoration: none;
   white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+  .wo-chevron-menu button,
+  .wo-chevron-menu a,
+  .wo-chevron-current,
+  .wo-chevron-menu p {
+    white-space: normal;
+  }
 }
 
 .wo-chevron-menu .wo-chevron-hint {
