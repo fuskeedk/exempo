@@ -1,4 +1,3 @@
-import { canManageOffice } from "@/lib/auth";
 import { loadInbox } from "@/lib/inbox";
 import { mailAccountFor, sendMail } from "@/lib/mail";
 import { buildIdleCasesMail, buildOfficeQuoteMail, uniqueEmails } from "@/lib/notify-copy";
@@ -13,13 +12,10 @@ export async function officeRecipientEmails() {
     getSettings(),
     prisma.user.findMany({
       where: { active: true, role: { in: ["ADMIN", "PL"] } },
-      select: { email: true, role: true },
+      select: { email: true },
     }),
   ]);
-  return uniqueEmails([
-    settings.company_email,
-    ...users.filter((user) => canManageOffice(user.role)).map((user) => user.email),
-  ]);
+  return uniqueEmails([settings.company_email, ...users.map((user) => user.email)]);
 }
 
 async function sendOfficeMail(subject: string, text: string, html: string) {
@@ -58,12 +54,12 @@ export async function notifyIdleCasesForTenant() {
   const settings = await getSettings();
   const users = await prisma.user.findMany({
     where: { active: true, role: { in: ["ADMIN", "PL"] } },
-    select: { id: true, email: true, role: true },
+    select: { id: true },
+    orderBy: { createdAt: "asc" },
   });
-  const office = users.filter((user) => canManageOffice(user.role));
-  if (office.length === 0) return { sent: 0, items: 0 };
+  if (users.length === 0) return { sent: 0, items: 0 };
   const items = await loadInbox(prisma, {
-    id: office[0].id,
+    id: users[0].id,
     office: true,
     tenantSlug: currentTenantSlug(),
   });
