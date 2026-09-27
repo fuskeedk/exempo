@@ -1,5 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { nextCaseNumber } from "@/lib/numbers";
+import { notifyOfficeQuoteDecision } from "@/lib/office-notify";
 import { currentTenantSlug, enterTenant, prisma, tenantPrisma } from "@/lib/prisma";
 
 export function newShareToken() {
@@ -124,6 +125,7 @@ export async function applyCustomerQuoteDecision(
         approvedName: name,
       },
     });
+    await notifyQuoteOffice(quote.id, "afvis", { name, note: opts.note, slug: opts.slug });
     return { ok: true as const, created: false, caseId: quote.caseId };
   }
 
@@ -133,5 +135,36 @@ export async function applyCustomerQuoteDecision(
     data: { status: "GODKENDT", approvedAt: new Date(), approvedName: name, rejectedNote: "" },
   });
   const converted = await convertApprovedQuoteToCase(quote.id, quote.createdById, opts.slug);
+  await notifyQuoteOffice(quote.id, "godkend", {
+    name,
+    slug: opts.slug,
+    path: converted.ok && converted.caseId ? `/sager/${converted.caseId}` : `/tilbud/${quote.id}`,
+  });
   return converted;
+}
+
+async function notifyQuoteOffice(
+  quoteId: string,
+  decision: "godkend" | "afvis",
+  opts: { name?: string; note?: string; slug?: string | null; path?: string },
+) {
+  try {
+    if (opts.slug) enterTenant(opts.slug);
+    const db = tenantPrisma(opts.slug || currentTenantSlug());
+    const row = await db.quote.findUnique({
+      where: { id: quoteId },
+      include: { customer: { select: { name: true } } },
+    });
+    if (!row) return;
+    await notifyOfficeQuoteDecision({
+      decision,
+      quoteNumber: row.quoteNumber,
+      customerName: row.customer.name,
+      approvedName: opts.name || row.approvedName,
+      note: opts.note || row.rejectedNote,
+      path: opts.path || `/tilbud/${row.id}`,
+    });
+  } catch {
+    /* kunden har allerede fået svar — kontor-mail må ikke vælte det */
+  }
 }

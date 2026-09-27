@@ -5,6 +5,8 @@ export type AoCatalogItem = {
   unit: string;
   url: string;
   imageUrl: string;
+  costPrice: number;
+  salePrice: number;
 };
 
 export type AoCatalogFetch = (input: string | URL, init?: RequestInit) => Promise<Response>;
@@ -40,12 +42,34 @@ export function aoImageUrl(raw: Record<string, unknown> | null | undefined) {
   );
 }
 
+function kronerToOre(value: unknown) {
+  if (typeof value === "number" && Number.isFinite(value) && value > 0) {
+    return Math.round(value * 100);
+  }
+  if (typeof value === "string" && value.trim()) {
+    const parsed = Number(value.replace(/\s/g, "").replace(",", "."));
+    if (Number.isFinite(parsed) && parsed > 0) return Math.round(parsed * 100);
+  }
+  return 0;
+}
+
+function firstPrice(raw: Record<string, unknown>, keys: string[]) {
+  for (const key of keys) {
+    const ore = kronerToOre(raw[key]);
+    if (ore > 0) return ore;
+  }
+  return 0;
+}
+
 function asItem(raw: Record<string, unknown> | null | undefined): AoCatalogItem | null {
   if (!raw) return null;
   const sku = String(raw.Varenr ?? raw.ItemNumber ?? raw.itemNumber ?? "").trim();
   const name = String(raw.Name ?? raw.name ?? "").replace(/\s+/g, " ").trim();
   if (!sku || !name) return null;
   const unit = String(raw.Maalingsenhed ?? raw.MeasuringUnit ?? raw.itemunit ?? "stk").trim() || "stk";
+  const costPrice = firstPrice(raw, ["Indkobspris", "Indkøbspris", "CostPrice", "NetPrice", "Nettopris"]);
+  const salePrice =
+    firstPrice(raw, ["Salgspris", "SalesPrice", "Price", "VeilPris", "VejlPris", "ListPrice"]) || costPrice;
   return {
     sku,
     barcode: firstBarcode(raw.EAN ?? raw.ean),
@@ -53,6 +77,8 @@ function asItem(raw: Record<string, unknown> | null | undefined): AoCatalogItem 
     unit: unit.toLowerCase(),
     url: absoluteAoUrl(raw.Url ?? raw.url) || `${AO_ORIGIN}/`,
     imageUrl: aoImageUrl(raw),
+    costPrice,
+    salePrice,
   };
 }
 

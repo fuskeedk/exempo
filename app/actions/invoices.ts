@@ -7,6 +7,7 @@ import { canDeleteInvoice, isInvoiceKind } from "@/lib/catalog";
 import { parseDayParam } from "@/lib/dates";
 import { canTransition } from "@/lib/fsm";
 import { parseKrToOre } from "@/lib/money";
+import { invoiceCustomerEmail, sendIssuedInvoiceMail } from "@/lib/invoice-email";
 import { nextInvoiceNumber } from "@/lib/numbers";
 import { prisma } from "@/lib/prisma";
 
@@ -186,17 +187,43 @@ export async function setInvoiceStatusAction(formData: FormData) {
   const status = str(formData, "status");
   const invoice = await prisma.invoice.findUnique({
     where: { id: invoiceId },
-    include: { case: { include: { invoices: true } } },
+    include: {
+      lines: true,
+      customer: true,
+      case: { include: { invoices: true, customer: true } },
+    },
   });
   if (!invoice) throw new Error("Fakturaen findes ikke.");
   if (!["KLADDE", "SENDT", "BETALT"].includes(status)) {
     throw new Error("Ugyldig fakturastatus.");
   }
 
+  if (status === "SENDT" && invoice.status === "KLADDE") {
+    const to = invoiceCustomerEmail({
+      customerEmail: invoice.customer?.email ?? invoice.case.customer?.email,
+      caseEmail: invoice.case.customerEmail,
+    });
+    if (!to) throw new Error("Kunden har ingen e-mail. Sæt e-mail på kunden, før fakturaen sendes.");
+    const mailed = await sendIssuedInvoiceMail({
+      to,
+      invoiceNumber: invoice.invoiceNumber,
+      kind: invoice.kind,
+      customerName: invoice.case.customerName,
+      address: invoice.case.customerAddress,
+      postal: invoice.case.customerPostal,
+      city: invoice.case.customerCity,
+      notes: invoice.notes,
+      dueAt: invoice.dueAt,
+      lines: invoice.lines,
+    });
+    if (!mailed.sent) throw new Error(mailed.reason);
+  }
+
   await prisma.invoice.update({
     where: { id: invoiceId },
     data: {
       status,
+      issuedAt: status === "SENDT" ? new Date() : invoice.issuedAt,
       paidAt: status === "BETALT" ? new Date() : invoice.paidAt,
     },
   });

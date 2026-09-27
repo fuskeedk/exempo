@@ -1,0 +1,9 @@
+[Unit]
+Description=Exempo daily office mail for idle cases
+After=network.target exempo.service
+
+[Service]
+Type=oneshot
+User=exempo
+Group=exempo
+ExecStart=/usr/bin/curl -sS -X POST http://127.0.0.1:3040/api/cron/daglig

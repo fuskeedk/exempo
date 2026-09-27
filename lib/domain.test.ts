@@ -702,6 +702,8 @@ describe("AO-katalog", () => {
             MeasuringUnit: "STK",
             Url: "/skrue-undersaenket-4x60-1039003679",
             ImageUrlMedium: "https://cdn.example/skrue.jpg",
+            Salgspris: 12.5,
+            Indkobspris: 8,
           }),
           { status: 200, headers: { "content-type": "application/json" } },
         );
@@ -732,6 +734,8 @@ describe("AO-katalog", () => {
     assert.equal(exact?.name, "SKRUE UNDERSÆNKET 4X60");
     assert.equal(exact?.barcode, "5703302001779");
     assert.equal(exact?.imageUrl, "https://cdn.example/skrue.jpg");
+    assert.equal(exact?.salePrice, 1250);
+    assert.equal(exact?.costPrice, 800);
 
     const hits = await searchAoCatalog("FUGA", { fetch: fetchImpl });
     assert.equal(hits.length, 1);

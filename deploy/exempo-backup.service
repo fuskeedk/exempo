@@ -1,0 +1,12 @@
+[Unit]
+Description=Exempo backup of tenant databases
+After=network.target
+
+[Service]
+Type=oneshot
+User=exempo
+Group=exempo
+Environment=DATA_DIR=/home/exempo/data
+Environment=BACKUP_DIR=/home/exempo/backups/data
+Environment=BACKUP_KEEP_DAYS=14
+ExecStart=/home/exempo/app/scripts/backup-data.sh
