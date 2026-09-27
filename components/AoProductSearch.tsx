@@ -99,7 +99,8 @@ export function AoProductSearch({
                     {hit.sku}
                     {hit.barcode ? ` · ${hit.barcode}` : ""}
                     {hit.unit ? ` · ${hit.unit}` : ""}
-                    {hit.salePrice ? ` · ${formatKrAmount(hit.salePrice)}` : ""}
+                    {hit.costPrice ? ` · ${formatKrAmount(hit.costPrice)}` : ""}
+                    {hit.salePrice && hit.salePrice !== hit.costPrice ? ` · ${formatKrAmount(hit.salePrice)}` : ""}
                   </span>
                 </div>
                 <input name="quantity" defaultValue="1" aria-label="Antal" />

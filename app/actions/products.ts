@@ -3,7 +3,14 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/auth";
-import { aoSearchEnabled, lookupAoProduct, searchAoCatalog, type AoCatalogItem } from "@/lib/ao-catalog";
+import {
+  aoSearchEnabled,
+  isAoWholesaler,
+  lookupAoProduct,
+  searchAoCatalog,
+  type AoCatalogItem,
+  type AoCredentials,
+} from "@/lib/ao-catalog";
 import { parseCatalogCsv } from "@/lib/catalog-import";
 import { requireProductCatalog } from "@/lib/modules";
 import { parseKrToOre } from "@/lib/money";
@@ -137,12 +144,18 @@ async function attachProductToCase(caseId: string, product: {
   revalidatePath("/varer");
 }
 
-async function aoAccountNumber() {
+async function aoConnection() {
   const agreements = await prisma.wholesalerAgreement.findMany({
-    select: { name: true, excludedFromSearch: true, agreementNumber: true },
+    select: { name: true, excludedFromSearch: true, agreementNumber: true, username: true, password: true },
   });
   if (!aoSearchEnabled(agreements)) return null;
-  return agreements.find((row) => /ao/i.test(row.name) && !row.excludedFromSearch)?.agreementNumber || "";
+  const row = agreements.find((item) => isAoWholesaler(item));
+  const auth: AoCredentials = {
+    username: row?.username ?? "",
+    password: row?.password ?? "",
+    account: row?.agreementNumber?.trim() || undefined,
+  };
+  return { account: row?.agreementNumber ?? "", auth };
 }
 
 async function upsertAoProduct(item: AoCatalogItem) {
@@ -206,14 +219,14 @@ export async function addMaterialByBarcodeAction(formData: FormData) {
     },
   });
   if (!product) {
-    const account = await aoAccountNumber();
-    if (account !== null) {
+    const connection = await aoConnection();
+    if (connection) {
       const hit =
-        (await lookupAoProduct(code)) ??
-        (await searchAoCatalog(code, { account, limit: 5 })).find(
+        (await lookupAoProduct(code, { auth: connection.auth })) ??
+        (await searchAoCatalog(code, { account: connection.account, auth: connection.auth, limit: 5 })).find(
           (item) => item.sku === code || item.barcode === code || item.barcode.split("|").includes(code),
         ) ??
-        (await searchAoCatalog(code, { account, limit: 1 }))[0];
+        (await searchAoCatalog(code, { account: connection.account, auth: connection.auth, limit: 1 }))[0];
       if (hit) product = await upsertAoProduct(hit);
     }
   }
@@ -234,9 +247,11 @@ export async function addAoMaterialAction(formData: FormData) {
     await attachProductToCase(caseId, local, quantity);
     return;
   }
-  const account = await aoAccountNumber();
-  if (account === null) throw new Error("Varen findes ikke i kataloget.");
-  const hit = (await lookupAoProduct(sku)) ?? (await searchAoCatalog(sku, { account, limit: 3 })).find((item) => item.sku === sku);
+  const connection = await aoConnection();
+  if (!connection) throw new Error("Varen findes ikke i kataloget.");
+  const hit =
+    (await lookupAoProduct(sku, { auth: connection.auth })) ??
+    (await searchAoCatalog(sku, { account: connection.account, auth: connection.auth, limit: 3 })).find((item) => item.sku === sku);
   if (!hit) throw new Error("AO-varen blev ikke fundet.");
   const product = await upsertAoProduct(hit);
   await attachProductToCase(caseId, product, quantity);

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
-import { aoSearchEnabled, searchAoCatalog } from "@/lib/ao-catalog";
+import { aoSearchEnabled, isAoWholesaler, searchAoCatalog } from "@/lib/ao-catalog";
 import { searchLocalCatalog } from "@/lib/catalog-search";
 import { prisma } from "@/lib/prisma";
 
@@ -26,14 +26,23 @@ export async function GET(request: Request) {
   const seen = new Set(localItems.map((item) => item.sku));
 
   const agreements = await prisma.wholesalerAgreement.findMany({
-    select: { name: true, excludedFromSearch: true, agreementNumber: true },
+    select: { name: true, excludedFromSearch: true, agreementNumber: true, username: true, password: true },
   });
   if (!aoSearchEnabled(agreements)) {
     return NextResponse.json({ items: localItems, disabled: localItems.length === 0 });
   }
-  const account = agreements.find((row) => /ao/i.test(row.name) && !row.excludedFromSearch)?.agreementNumber ?? "";
+  const row = agreements.find((item) => isAoWholesaler(item));
+  const account = row?.agreementNumber ?? "";
   try {
-    const remote = await searchAoCatalog(q, { account, limit: 10 });
+    const remote = await searchAoCatalog(q, {
+      account,
+      auth: {
+        username: row?.username ?? "",
+        password: row?.password ?? "",
+        account: account || undefined,
+      },
+      limit: 10,
+    });
     const items = [
       ...localItems,
       ...remote
