@@ -106,6 +106,24 @@ async function aoGet(path: string, query: Record<string, string>, fetchImpl: AoC
   });
 }
 
+async function listPriceFor(sku: string, fetchImpl: AoCatalogFetch) {
+  const payload = await readJson(await aoGet("/api/v2/ItemDetail/GetItemDetails", { productNumber: sku }, fetchImpl));
+  if (!payload || typeof payload !== "object") return 0;
+  const raw = payload as Record<string, unknown>;
+  return firstPrice(raw, ["CampaignPrice", "Price", "Salgspris", "SalesPrice"]);
+}
+
+async function withListPrices(items: AoCatalogItem[], fetchImpl: AoCatalogFetch) {
+  await Promise.all(
+    items.map(async (item) => {
+      if (item.salePrice > 0) return;
+      const price = await listPriceFor(item.sku, fetchImpl);
+      if (price > 0) item.salePrice = price;
+    }),
+  );
+  return items;
+}
+
 export async function lookupAoProduct(
   code: string,
   opts: { fetch?: AoCatalogFetch } = {},
@@ -115,7 +133,10 @@ export async function lookupAoProduct(
   const fetchImpl = opts.fetch ?? fetch;
   const payload = await readJson(await aoGet("/api/v2/Produkt/GetSingleItemData", { productNumber: query }, fetchImpl));
   if (!payload || typeof payload !== "object" || "Message" in (payload as object)) return null;
-  return asItem(payload as Record<string, unknown>);
+  const item = asItem(payload as Record<string, unknown>);
+  if (!item) return null;
+  await withListPrices([item], fetchImpl);
+  return item;
 }
 
 export async function searchAoCatalog(
@@ -163,5 +184,7 @@ export async function searchAoCatalog(
     push(await lookupAoProduct(term.replace(/^0+/, ""), { fetch: fetchImpl }));
   }
 
-  return items.slice(0, limit);
+  const page = items.slice(0, limit);
+  await withListPrices(page, fetchImpl);
+  return page;
 }

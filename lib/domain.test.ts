@@ -727,6 +727,12 @@ describe("AO-katalog", () => {
           { status: 200, headers: { "content-type": "application/json" } },
         );
       }
+      if (url.includes("GetItemDetails") && url.includes("1017060498")) {
+        return new Response(JSON.stringify({ Name: "Fuga", Price: "47.5", CampaignPrice: "0" }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        });
+      }
       return new Response(JSON.stringify({ Produkter: [] }), { status: 200 });
     };
 
@@ -742,6 +748,7 @@ describe("AO-katalog", () => {
     assert.equal(hits[0]?.sku, "1017060498");
     assert.equal(hits[0]?.barcode, "5703302166478");
     assert.equal(hits[0]?.imageUrl, "https://cdn.example/fuga.jpg");
+    assert.equal(hits[0]?.salePrice, 4750);
 
     const bySku = await searchAoCatalog("1039003679", { fetch: fetchImpl });
     assert.equal(bySku[0]?.sku, "1039003679");
