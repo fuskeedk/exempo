@@ -36,8 +36,7 @@ export async function createProductAction(formData: FormData) {
 }
 
 export async function importCatalogAction(formData: FormData) {
-  const session = await requireRole(["ADMIN", "PL"]);
-  await requireProductCatalog(session);
+  await requireRole(["ADMIN", "PL"]);
   const file = formData.get("file");
   if (!(file instanceof File) || file.size === 0) {
     throw new Error("Vælg en CSV-fil.");
@@ -98,7 +97,9 @@ export async function importCatalogAction(formData: FormData) {
   }
   revalidatePath("/varer");
   revalidatePath("/sager");
-  redirect(`/varer?besked=${encodeURIComponent(`${created} nye, ${updated} opdateret, ${skipped} sprunget over.`)}`);
+  const next = str(formData, "next");
+  const path = next.startsWith("/") && !next.startsWith("//") ? next.split("?")[0] : "/varer";
+  redirect(`${path}?besked=${encodeURIComponent(`${created} nye, ${updated} opdateret, ${skipped} sprunget over.`)}${path.includes("indstillinger") ? "#grossist" : ""}`);
 }
 
 async function attachProductToCase(caseId: string, product: {

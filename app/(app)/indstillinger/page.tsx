@@ -17,6 +17,7 @@ import {
   createKlsTemplateAction,
   deleteKlsTemplateAction,
 } from "@/app/actions/kls";
+import { importCatalogAction } from "@/app/actions/products";
 import {
   createWholesalerAction,
   deleteWholesalerAction,
@@ -503,6 +504,25 @@ export default async function SettingsPage({
                 <SubmitButton>{editing ? "Gem aftale" : "Opret aftale"}</SubmitButton>
                 {editing ? <GhostLink href="/indstillinger#grossist">Annuller</GhostLink> : null}
               </div>
+            </form>
+            <h3 className="mt-8 font-serif text-lg">Importer prisliste</h3>
+            <form action={importCatalogAction} className="mt-4 grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+              <input type="hidden" name="next" value="/indstillinger" />
+              <label className="block">
+                <Label>Grossist</Label>
+                <Select name="group" defaultValue="GROSSIST">
+                  {[...new Set(["GROSSIST", ...wholesalers.map((row) => row.name), "Solar A/S"])].map((name) => (
+                    <option key={name} value={name}>
+                      {name}
+                    </option>
+                  ))}
+                </Select>
+              </label>
+              <label className="block">
+                <Label>CSV</Label>
+                <Input name="file" type="file" accept=".csv,text/csv,text/plain" required />
+              </label>
+              <SubmitButton>Importer</SubmitButton>
             </form>
           </div>
         </Card>
