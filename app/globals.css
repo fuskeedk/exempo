@@ -425,6 +425,65 @@ a {
   font-size: 13px;
 }
 
+@media (max-width: 720px) {
+  .act-dialog {
+    align-items: center;
+    padding: 10px;
+  }
+
+  .act-dialog-card {
+    width: min(22rem, calc(100vw - 20px));
+    max-height: min(70dvh, 32rem);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .act-dialog-head {
+    flex: 0 0 auto;
+    padding: 8px 12px;
+  }
+
+  .act-dialog-head h2 {
+    font-size: 1.125rem;
+  }
+
+  .act-dialog-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 10px 12px 12px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .act-dialog-body > :not([hidden]) ~ :not([hidden]) {
+    margin-top: 0.5rem;
+  }
+
+  .act-dialog-body textarea {
+    min-height: 3.25rem;
+    height: 3.25rem;
+  }
+
+  .act-dialog-card .act-search-list {
+    position: static;
+    max-height: 8rem;
+    margin-top: 4px;
+    box-shadow: none;
+  }
+
+  .act-dialog-actions {
+    gap: 6px;
+    padding-top: 8px;
+  }
+
+  .act-dialog-actions button {
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+}
+
 .timesheet-head--holiday {
   background: #c4a35a;
   color: #1b1814;

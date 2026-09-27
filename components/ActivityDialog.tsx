@@ -168,15 +168,15 @@ export function ActivityDialog({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/35 px-4 py-16" onClick={onClose}>
+    <div className="act-dialog fixed inset-0 z-50 flex items-start justify-center bg-black/35 px-4 py-16" onClick={onClose}>
       <div
-        className="w-full max-w-md overflow-visible rounded-2xl border border-line bg-paper-2 shadow-[0_16px_40px_rgba(27,24,20,0.18)]"
+        className="act-dialog-card w-full max-w-md overflow-visible rounded-2xl border border-line bg-paper-2 shadow-[0_16px_40px_rgba(27,24,20,0.18)]"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="bg-pine px-4 py-3 text-[#f4efe4]">
+        <div className="act-dialog-head bg-pine px-4 py-3 text-[#f4efe4]">
           <h2 className="font-serif text-xl tracking-tight">Aktivitet</h2>
         </div>
-        <div className="space-y-3 p-4 text-sm">
+        <div className="act-dialog-body space-y-3 p-4 text-sm">
           {error ? <p className="rounded-md bg-[#f3d7d4] px-3 py-2 text-[#7c2f2a]">{error}</p> : null}
           <label className="flex flex-wrap items-center gap-3">
             <span className="w-24">Dato:</span>
@@ -291,7 +291,7 @@ export function ActivityDialog({
             />
             <p className="text-right text-xs text-muted">{note.length} / 1500</p>
           </label>
-          <div className="flex flex-wrap items-center justify-between gap-2 pt-2">
+          <div className="act-dialog-actions flex flex-wrap items-center justify-between gap-2 pt-2">
             {canDelete ? (
               <button
                 type="button"

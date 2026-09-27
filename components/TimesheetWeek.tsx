@@ -638,7 +638,7 @@ function DayColumn({
       className={`relative border-l border-[var(--ts-line)] ${
         day.holiday ? "timesheet-col--holiday" : day.isWeekend ? "timesheet-col--weekend" : ""
       } ${range ? "timesheet-col--selecting" : ""}`}
-      style={{ height, touchAction: range ? "none" : "pan-x" }}
+      style={{ height, touchAction: range ? "none" : "pan-x pan-y" }}
       onDragOver={(event) => {
         event.preventDefault();
         event.dataTransfer.dropEffect = "move";
@@ -663,6 +663,10 @@ function DayColumn({
         const dy = event.clientY - gesture.y;
         if (gesture.lock === "pending") {
           if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+          if (event.pointerType === "touch") {
+            gesture.lock = Math.abs(dx) > Math.abs(dy) ? "h" : "v";
+            return;
+          }
           if (Math.abs(dx) > Math.abs(dy)) {
             gesture.lock = "h";
             gestureRef.current = null;
@@ -702,12 +706,18 @@ function DayColumn({
             /* ignore */
           }
         }
-        if (gesture?.lock === "h") return;
+        if (gesture?.lock === "h" || gesture?.lock === "v") {
+          if (selection && gesture.lock === "v") finishRange(selection);
+          return;
+        }
         if (selection) {
           finishRange(selection);
           return;
         }
         if (gesture && gesture.lock === "pending" && gesture.pointerId === event.pointerId) {
+          const movedX = event.clientX - gesture.x;
+          const movedY = event.clientY - gesture.y;
+          if (event.pointerType === "touch" && (Math.abs(movedX) >= 8 || Math.abs(movedY) >= 8)) return;
           const minutes = minutesAt(gesture.y, gesture.top);
           finishRange({ origin: minutes, current: minutes });
         }
