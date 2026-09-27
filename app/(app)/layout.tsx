@@ -11,7 +11,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   const user = await requireSession();
   const [settings, inbox] = await Promise.all([
     getSettings(),
-    loadInbox(prisma, { id: user.id, office: canManageOffice(user.role) }),
+    loadInbox(prisma, { id: user.id, office: canManageOffice(user.role), tenantSlug: user.tenantSlug }),
   ]);
   return (
     <AppShell

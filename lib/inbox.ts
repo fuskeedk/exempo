@@ -1,4 +1,5 @@
 import { startOfDay } from "@/lib/dates";
+import { readInboxSeen, unreadInbox } from "@/lib/inbox-seen";
 
 export const STALE_CASE_DAYS = 8;
 export const ACCEPTED_QUOTE_DAYS = 14;
@@ -50,6 +51,7 @@ export type InboxCase = {
 export type InboxViewer = {
   id: string;
   office: boolean;
+  tenantSlug?: string;
 };
 
 export function calendarDaysSince(from: Date, now: Date): number {
@@ -171,5 +173,7 @@ export async function loadInbox(db: InboxStore, viewer: InboxViewer, now = new D
       },
     }),
   ]);
-  return collectInbox(quotes, cases, viewer, now);
+  const items = collectInbox(quotes, cases, viewer, now);
+  if (!viewer.tenantSlug) return items;
+  return unreadInbox(items, readInboxSeen(viewer.tenantSlug, viewer.id));
 }

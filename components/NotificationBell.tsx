@@ -1,3 +1,7 @@
+"use client";
+
+import { usePathname } from "next/navigation";
+import { openInboxItemAction } from "@/app/actions/inbox";
 import type { InboxItem } from "@/lib/inbox";
 
 export function NotificationBell({
@@ -7,7 +11,9 @@ export function NotificationBell({
   items: InboxItem[];
   variant?: "bar" | "header";
 }) {
-  const count = items.length;
+  const pathname = usePathname();
+  const visible = items.filter((item) => item.href !== pathname);
+  const count = visible.length;
   const label = count === 0 ? "Ingen beskeder" : count === 1 ? "1 besked" : `${count} beskeder`;
   return (
     <details className={`notify notify--${variant}`}>
@@ -16,16 +22,20 @@ export function NotificationBell({
         {count > 0 ? <span className="notify-count">{count > 99 ? "99+" : count}</span> : null}
       </summary>
       <div className="notify-panel">
-        {items.length === 0 ? (
+        {visible.length === 0 ? (
           <p className="notify-empty">Ingen nye beskeder</p>
         ) : (
           <ul>
-            {items.map((item) => (
+            {visible.map((item) => (
               <li key={item.id}>
-                <a href={item.href}>
-                  <strong>{item.title}</strong>
-                  <span>{item.detail}</span>
-                </a>
+                <form action={openInboxItemAction}>
+                  <input type="hidden" name="id" value={item.id} />
+                  <input type="hidden" name="href" value={item.href} />
+                  <button type="submit">
+                    <strong>{item.title}</strong>
+                    <span>{item.detail}</span>
+                  </button>
+                </form>
               </li>
             ))}
           </ul>

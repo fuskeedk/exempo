@@ -13,6 +13,7 @@ import { PRICING_MODE_LABELS, QUOTE_STATUS_LABELS, type PricingMode, type QuoteS
 import { quoteEconomics } from "@/lib/coverage";
 import { companyLogoSrc } from "@/lib/logo";
 import { formatKr } from "@/lib/money";
+import { inboxKeysForQuote, markInboxSeen } from "@/lib/inbox-seen";
 import { prisma } from "@/lib/prisma";
 import { customerQuotePath, ensureQuoteShareToken } from "@/lib/quotes";
 import { getSettings } from "@/lib/settings";
@@ -35,6 +36,7 @@ export default async function QuoteDetailPage({
     getSettings(),
   ]);
   if (!quote) notFound();
+  markInboxSeen(session.tenantSlug, session.id, inboxKeysForQuote(quote.id));
   const shareToken = await ensureQuoteShareToken(quote.id);
   const headerStore = await headers();
   const host = headerStore.get("x-forwarded-host") || headerStore.get("host") || "localhost:3000";

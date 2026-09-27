@@ -1815,6 +1815,7 @@ a {
 }
 
 .notify-panel a,
+.notify-panel button,
 .notify-panel strong,
 .notify-panel span {
   min-width: 0;
@@ -1853,9 +1854,16 @@ a {
 }
 
 .notify-empty,
-.notify-panel li a {
+.notify-panel li a,
+.notify-panel li button {
   display: block;
+  width: 100%;
   padding: 12px 14px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
 }
 
 .notify-empty {
@@ -1874,12 +1882,14 @@ a {
   border-top: 1px solid var(--line);
 }
 
-.notify-panel a {
+.notify-panel a,
+.notify-panel button {
   color: var(--ink);
   text-decoration: none;
 }
 
-.notify-panel a:hover {
+.notify-panel a:hover,
+.notify-panel button:hover {
   background: var(--moss);
 }
 
