@@ -229,8 +229,8 @@ export function MobileNav({
 
   return (
     <div className="lg:hidden">
-      <header className="no-print fixed inset-x-0 top-0 z-40 border-b border-white/10 bg-pine text-[#f4efe4] pt-[env(safe-area-inset-top)]">
-        <div className="flex h-14 items-center gap-3 px-3">
+      <header className="no-print fixed inset-x-0 top-0 z-40 overflow-visible border-b border-white/10 bg-pine text-[#f4efe4] pt-[env(safe-area-inset-top)]">
+        <div className="flex h-14 items-center gap-3 overflow-visible px-3">
           <button
             type="button"
             aria-label="Åbn menu"
