@@ -6,7 +6,7 @@ export const ACCEPTED_QUOTE_DAYS = 14;
 
 const CLOSED_CASE_STATES = new Set(["AFSLUTTET", "ANNULLERET"]);
 
-export type InboxKind = "quote_accepted" | "case_stale";
+export type InboxKind = "quote_accepted" | "quote_rejected" | "case_stale";
 
 export type InboxItem = {
   id: string;
@@ -26,6 +26,7 @@ export type InboxQuote = {
   approvedAt: Date | null;
   updatedAt: Date;
   emailedAt: Date | null;
+  rejectedNote?: string;
   customer: { name: string };
   cases: { id: string }[];
 };
@@ -95,6 +96,24 @@ export function acceptedQuoteItem(quote: InboxQuote, now: Date): InboxItem | nul
   };
 }
 
+export function rejectedQuoteItem(quote: InboxQuote, now: Date): InboxItem | null {
+  if (quote.status !== "AFVIST") return null;
+  const rejectedAt = quote.updatedAt;
+  if (calendarDaysSince(rejectedAt, now) > ACCEPTED_QUOTE_DAYS) return null;
+  const note = quote.rejectedNote?.trim();
+  const detail = note && note !== "Afvist af kunden"
+    ? `${quote.customer.name} · ${quote.quoteNumber} · ${note}`
+    : `${quote.customer.name} · ${quote.quoteNumber}`;
+  return {
+    id: `quote:${quote.id}`,
+    kind: "quote_rejected",
+    href: `/tilbud/${quote.id}`,
+    title: "Kunden har afvist tilbuddet",
+    detail,
+    at: rejectedAt.toISOString(),
+  };
+}
+
 export function staleCaseItem(sag: InboxCase, now: Date): InboxItem | null {
   if (CLOSED_CASE_STATES.has(sag.state)) return null;
   const last = lastCaseActivity(sag);
@@ -117,7 +136,9 @@ export function collectInbox(
   now = new Date(),
 ): InboxItem[] {
   const quoteItems = viewer.office
-    ? quotes.map((quote) => acceptedQuoteItem(quote, now)).filter((item): item is InboxItem => Boolean(item))
+    ? quotes
+        .flatMap((quote) => [acceptedQuoteItem(quote, now), rejectedQuoteItem(quote, now)])
+        .filter((item): item is InboxItem => Boolean(item))
     : [];
   const visibleCases = viewer.office
     ? cases
@@ -131,7 +152,7 @@ export function collectInbox(
 type InboxStore = {
   quote: {
     findMany: (args: {
-      where: { status: string };
+      where: { status: { in: string[] } };
       include: { customer: { select: { name: true } }; cases: { select: { id: true } } };
     }) => Promise<InboxQuote[]>;
   };
@@ -154,7 +175,7 @@ export async function loadInbox(db: InboxStore, viewer: InboxViewer, now = new D
   const [quotes, cases] = await Promise.all([
     viewer.office
       ? db.quote.findMany({
-          where: { status: "GODKENDT" },
+          where: { status: { in: ["GODKENDT", "AFVIST"] } },
           include: {
             customer: { select: { name: true } },
             cases: { select: { id: true } },

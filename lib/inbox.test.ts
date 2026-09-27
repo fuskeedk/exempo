@@ -7,6 +7,7 @@ import {
   calendarDaysSince,
   collectInbox,
   lastCaseActivity,
+  rejectedQuoteItem,
   staleCaseItem,
   type InboxCase,
   type InboxQuote,
@@ -95,6 +96,31 @@ describe("acceptedQuoteItem", () => {
   });
 });
 
+describe("rejectedQuoteItem", () => {
+  it("flags a recently rejected quote", () => {
+    const item = rejectedQuoteItem(
+      quote({ status: "AFVIST", updatedAt: daysAgo(1), rejectedNote: "For dyrt" }),
+      now,
+    );
+    assert.ok(item);
+    assert.equal(item?.kind, "quote_rejected");
+    assert.equal(item?.href, "/tilbud/q1");
+    assert.equal(item?.title, "Kunden har afvist tilbuddet");
+    assert.match(item?.detail ?? "", /For dyrt/);
+  });
+
+  it("drops an old rejection", () => {
+    assert.equal(
+      rejectedQuoteItem(quote({ status: "AFVIST", updatedAt: daysAgo(ACCEPTED_QUOTE_DAYS + 1) }), now),
+      null,
+    );
+  });
+
+  it("ignores approved quotes", () => {
+    assert.equal(rejectedQuoteItem(quote(), now), null);
+  });
+});
+
 describe("staleCaseItem", () => {
   it("flags a sag after eight untouched days", () => {
     const item = staleCaseItem(sag({ updatedAt: daysAgo(STALE_CASE_DAYS), events: [] }), now);
@@ -115,18 +141,25 @@ describe("staleCaseItem", () => {
 
 describe("collectInbox", () => {
   it("shows quotes to the office and only own sager to the fitter", () => {
-    const office = collectInbox([quote()], [sag(), sag({ id: "c2", assignedToId: "other", projectLeaderId: "other" })], {
-      id: "pia",
-      office: true,
-    }, now);
+    const rejected = quote({ id: "q2", status: "AFVIST", updatedAt: daysAgo(1), quoteNumber: "TIL-2026-0009" });
+    const office = collectInbox(
+      [quote(), rejected],
+      [sag(), sag({ id: "c2", assignedToId: "other", projectLeaderId: "other" })],
+      { id: "pia", office: true },
+      now,
+    );
     assert.equal(office.some((item) => item.kind === "quote_accepted"), true);
+    assert.equal(office.some((item) => item.kind === "quote_rejected"), true);
     assert.equal(office.filter((item) => item.kind === "case_stale").length, 2);
 
-    const fitter = collectInbox([quote()], [sag(), sag({ id: "c2", assignedToId: "other", projectLeaderId: "other" })], {
-      id: "lars",
-      office: false,
-    }, now);
+    const fitter = collectInbox(
+      [quote(), rejected],
+      [sag(), sag({ id: "c2", assignedToId: "other", projectLeaderId: "other" })],
+      { id: "lars", office: false },
+      now,
+    );
     assert.equal(fitter.some((item) => item.kind === "quote_accepted"), false);
+    assert.equal(fitter.some((item) => item.kind === "quote_rejected"), false);
     assert.equal(fitter.map((item) => item.id).join(), "case:c1");
   });
 });
