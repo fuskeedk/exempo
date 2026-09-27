@@ -1,3 +1,7 @@
+import { aoAuthedPost, canLoginAo, type AoCredentials } from "@/lib/ao-session";
+
+export type { AoCredentials };
+
 export type AoCatalogItem = {
   sku: string;
   barcode: string;
@@ -124,9 +128,40 @@ async function withListPrices(items: AoCatalogItem[], fetchImpl: AoCatalogFetch)
   return items;
 }
 
+export function applyAoNetPrice(item: AoCatalogItem, raw: Record<string, unknown>) {
+  const costPrice = firstPrice(raw, ["DinPris", "Indkobspris", "Indkøbspris", "Nettopris", "NetPrice"]);
+  const salePrice =
+    firstPrice(raw, ["Udsalgspris"]) || firstPrice(raw, ["Listepris", "Salgspris", "SalesPrice", "Price"]) || costPrice;
+  if (costPrice > 0) item.costPrice = costPrice;
+  if (salePrice > 0) item.salePrice = salePrice;
+  return item;
+}
+
+async function withNetPrices(items: AoCatalogItem[], fetchImpl: AoCatalogFetch, auth?: AoCredentials) {
+  if (!items.length || !canLoginAo(auth) || !auth) return items;
+  const payload = await aoAuthedPost(
+    "/api/v2/Pris/HentPriserMedAvancer",
+    items.map((item) => item.sku),
+    auth,
+    fetchImpl,
+  );
+  const rows = Array.isArray(payload) ? payload : [];
+  const bySku = new Map<string, Record<string, unknown>>();
+  for (const row of rows) {
+    if (!row || typeof row !== "object") continue;
+    const sku = String((row as { Varenr?: unknown }).Varenr ?? "").trim();
+    if (sku) bySku.set(sku, row as Record<string, unknown>);
+  }
+  for (const item of items) {
+    const row = bySku.get(item.sku);
+    if (row) applyAoNetPrice(item, row);
+  }
+  return items;
+}
+
 export async function lookupAoProduct(
   code: string,
-  opts: { fetch?: AoCatalogFetch } = {},
+  opts: { fetch?: AoCatalogFetch; auth?: AoCredentials } = {},
 ): Promise<AoCatalogItem | null> {
   const query = code.trim();
   if (!query) return null;
@@ -136,12 +171,13 @@ export async function lookupAoProduct(
   const item = asItem(payload as Record<string, unknown>);
   if (!item) return null;
   await withListPrices([item], fetchImpl);
+  await withNetPrices([item], fetchImpl, opts.auth);
   return item;
 }
 
 export async function searchAoCatalog(
   query: string,
-  opts: { fetch?: AoCatalogFetch; account?: string; limit?: number } = {},
+  opts: { fetch?: AoCatalogFetch; account?: string; auth?: AoCredentials; limit?: number } = {},
 ): Promise<AoCatalogItem[]> {
   const term = query.trim();
   if (term.length < 2) return [];
@@ -157,7 +193,7 @@ export async function searchAoCatalog(
   };
 
   if (/^\d{6,14}$/.test(term)) {
-    push(await lookupAoProduct(term, { fetch: fetchImpl }));
+    push(await lookupAoProduct(term, { fetch: fetchImpl, auth: opts.auth }));
   }
 
   const payload = await readJson(
@@ -181,10 +217,11 @@ export async function searchAoCatalog(
   }
 
   if (!items.length && /^\d{8,14}$/.test(term)) {
-    push(await lookupAoProduct(term.replace(/^0+/, ""), { fetch: fetchImpl }));
+    push(await lookupAoProduct(term.replace(/^0+/, ""), { fetch: fetchImpl, auth: opts.auth }));
   }
 
   const page = items.slice(0, limit);
   await withListPrices(page, fetchImpl);
+  await withNetPrices(page, fetchImpl, opts.auth);
   return page;
 }

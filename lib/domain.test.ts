@@ -684,6 +684,91 @@ Reference                0037348/Poppelvænget
 });
 
 describe("AO-katalog", () => {
+  it("maps net prices from a logged-in AO session without putting the password in the URL", async () => {
+    const { lookupAoProduct, searchAoCatalog } = await import("./ao-catalog");
+    const { resetAoSessions } = await import("./ao-session");
+    resetAoSessions();
+    const calls: Array<{ url: string; method: string; body: string }> = [];
+    const fetchImpl = async (input: string | URL, init?: RequestInit) => {
+      const url = String(input);
+      const method = (init?.method ?? "GET").toUpperCase();
+      const body = typeof init?.body === "string" ? init.body : "";
+      calls.push({ url, method, body });
+      assert.equal(url.includes("hemmelig-kode"), false);
+      if (url.includes("ValiderBruger")) {
+        assert.equal(method, "POST");
+        assert.match(body, /"Brugernavn":"ao-user"/);
+        assert.match(body, /"LoginKanal":"Web"/);
+        const headers = new Headers();
+        headers.append("content-type", "application/json");
+        headers.append("set-cookie", ".EPiServerLogin=session-cookie; Path=/; HttpOnly");
+        return new Response(JSON.stringify({ Status: true, Message: "" }), { status: 200, headers });
+      }
+      if (url.includes("VaelgPrisKonto")) {
+        assert.equal(method, "POST");
+        assert.equal(body, JSON.stringify("1000000001"));
+        return new Response(null, { status: 204 });
+      }
+      if (url.includes("HentPriserMedAvancer")) {
+        assert.equal(method, "POST");
+        assert.match(String(init?.headers ? new Headers(init.headers).get("cookie") : ""), /\.EPiServerLogin=session-cookie/);
+        return new Response(
+          JSON.stringify([
+            { Varenr: "1039003679", DinPris: 5.2, Listepris: 9.5, Udsalgspris: 0 },
+            { Varenr: "1017060498", DinPris: 88.83, Listepris: 163, Udsalgspris: 0 },
+          ]),
+          { status: 200, headers: { "content-type": "application/json" } },
+        );
+      }
+      if (url.includes("GetSingleItemData") && url.includes("1039003679")) {
+        return new Response(
+          JSON.stringify({
+            Varenr: "1039003679",
+            Name: "SKRUE UNDERSÆNKET 4X60",
+            EAN: "5703302001779",
+            MeasuringUnit: "STK",
+            Url: "/skrue-undersaenket-4x60-1039003679",
+            ImageUrlMedium: "https://cdn.example/skrue.jpg",
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        );
+      }
+      if (url.includes("QuickSearch") && url.includes("FUGA")) {
+        return new Response(
+          JSON.stringify({
+            Count: 1,
+            Produkter: [
+              {
+                Varenr: "1017060498",
+                Name: "Fuga Stikkontakt med sidejord, 1,5M, hvid",
+                EAN: "5703302166478",
+                Maalingsenhed: "STK",
+                Url: "/fuga-stikk-sidejord-15m-hv-1017060498",
+                ImageUrlMedium: "https://cdn.example/fuga.jpg",
+              },
+            ],
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        );
+      }
+      if (url.includes("GetItemDetails")) {
+        return new Response(JSON.stringify({ Name: "Fuga", Price: "47.5", CampaignPrice: "0" }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        });
+      }
+      return new Response("", { status: 200 });
+    };
+    const auth = { username: "ao-user", password: "hemmelig-kode", account: "1000000001" };
+    const exact = await lookupAoProduct("1039003679", { fetch: fetchImpl, auth });
+    assert.equal(exact?.costPrice, 520);
+    assert.equal(exact?.salePrice, 950);
+    const hits = await searchAoCatalog("FUGA", { fetch: fetchImpl, auth });
+    assert.equal(hits[0]?.costPrice, 8883);
+    assert.equal(hits[0]?.salePrice, 16300);
+    assert.equal(calls.some((call) => call.url.includes("ValiderBruger") && call.method === "POST"), true);
+  });
+
   it("maps QuickSearch and exact item lookups and ignores excluded wholesalers", async () => {
     const { aoSearchEnabled, isAoWholesaler, lookupAoProduct, searchAoCatalog } = await import("./ao-catalog");
     assert.equal(isAoWholesaler({ name: "AO Johansen" }), true);

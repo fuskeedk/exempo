@@ -438,7 +438,7 @@ export default async function SettingsPage({
             <div>
               <h2 className="font-serif text-xl">Grossistaftaler</h2>
               <p className="mt-1 text-sm text-muted">
-                Aftalenumre, EDI og rabatperiode hos AO, STARK, Bygma og de øvrige grossister. AO-varesøgning på arbejdssedlen er slået til, så længe AO ikke er udelukket fra varesøgning. Nettopriser kommer med fakturaen — indtil da sættes indkøb og salg manuelt.
+                Aftalenumre, EDI og rabatperiode hos AO, STARK, Bygma og de øvrige grossister. AO-varesøgning på arbejdssedlen er slået til, så længe AO ikke er udelukket fra varesøgning.
               </p>
             </div>
           </div>
