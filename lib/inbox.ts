@@ -44,7 +44,7 @@ export type InboxCase = {
   materials?: { createdAt: Date }[];
   documents?: { createdAt: Date }[];
   extraWorks?: { createdAt: Date }[];
-  invoices?: { createdAt: Date }[];
+  invoices?: { issuedAt?: Date; createdAt?: Date }[];
 };
 
 export type InboxViewer = {
@@ -66,7 +66,7 @@ export function lastCaseActivity(sag: InboxCase): Date {
     ...(sag.materials ?? []).map((row) => row.createdAt),
     ...(sag.documents ?? []).map((row) => row.createdAt),
     ...(sag.extraWorks ?? []).map((row) => row.createdAt),
-    ...(sag.invoices ?? []).map((row) => row.createdAt),
+    ...(sag.invoices ?? []).map((row) => row.issuedAt ?? row.createdAt).filter((stamp): stamp is Date => Boolean(stamp)),
   ];
   return new Date(Math.max(...stamps.map((stamp) => stamp.getTime())));
 }
@@ -142,7 +142,7 @@ type InboxStore = {
         materials: { select: { createdAt: true } };
         documents: { select: { createdAt: true } };
         extraWorks: { select: { createdAt: true } };
-        invoices: { select: { createdAt: true } };
+        invoices: { select: { issuedAt: true } };
       };
     }) => Promise<InboxCase[]>;
   };
@@ -167,7 +167,7 @@ export async function loadInbox(db: InboxStore, viewer: InboxViewer, now = new D
         materials: { select: { createdAt: true } },
         documents: { select: { createdAt: true } },
         extraWorks: { select: { createdAt: true } },
-        invoices: { select: { createdAt: true } },
+        invoices: { select: { issuedAt: true } },
       },
     }),
   ]);
