@@ -4,6 +4,7 @@ import { Flash, ErrorFlash } from "@/components/Flash";
 import { requireSession } from "@/lib/auth";
 import { canManageOffice } from "@/lib/auth";
 import { caseEconomics } from "@/lib/coverage";
+import { inboxKeysForCase, markInboxSeen } from "@/lib/inbox-seen";
 import { prisma } from "@/lib/prisma";
 import { getSettings, productCatalogEnabled, vanStockEnabled } from "@/lib/settings";
 import { ensureDefaultKlsTemplates } from "@/lib/kls-catalog";
@@ -42,6 +43,21 @@ export default async function CaseDetailPage({
   });
   if (!sag) notFound();
   if (!canManageOffice(user.role) && sag.assignedToId !== user.id) notFound();
+
+  const relatedQuotes = await prisma.quote.findMany({
+    where: {
+      OR: [{ caseId: id }, ...(sag.quoteId ? [{ id: sag.quoteId }] : [])],
+    },
+    select: { id: true },
+  });
+  markInboxSeen(
+    user.tenantSlug,
+    user.id,
+    inboxKeysForCase(
+      id,
+      relatedQuotes.map((row) => row.id),
+    ),
+  );
 
   const settings = await getSettings();
   const catalogOn = productCatalogEnabled(settings);

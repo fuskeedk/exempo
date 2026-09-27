@@ -1752,9 +1752,167 @@ a {
 
 .wo-createbar {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
+  gap: 10px;
   margin-bottom: 12px;
 }
+
+.notify {
+  position: relative;
+}
+
+.notify summary {
+  list-style: none;
+  cursor: pointer;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--paper-2);
+  font-size: 18px;
+}
+
+.notify summary::-webkit-details-marker {
+  display: none;
+}
+
+.notify[open] summary,
+.notify summary:hover {
+  background: #fff;
+}
+
+.notify-count {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 1.15rem;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--rust);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.15rem;
+  text-align: center;
+}
+
+.notify-panel {
+  position: absolute;
+  right: 0;
+  z-index: 40;
+  width: min(22rem, calc(100vw - 2rem));
+  margin-top: 6px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: var(--paper-2);
+  box-shadow: 0 10px 24px rgba(27, 24, 20, 0.08);
+}
+
+.notify-panel a,
+.notify-panel button,
+.notify-panel strong,
+.notify-panel span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: normal;
+}
+
+.notify--header summary {
+  border-color: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.notify--header[open] summary,
+.notify--header summary:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+@media (max-width: 1023px) {
+  .notify--header {
+    position: static;
+  }
+
+  .notify--header .notify-panel {
+    position: fixed;
+    top: calc(env(safe-area-inset-top, 0px) + 3.5rem + 6px);
+    left: 12px;
+    right: 12px;
+    width: auto;
+    max-width: none;
+    max-height: min(70vh, 28rem);
+    margin-top: 0;
+    overflow: auto;
+    z-index: 45;
+  }
+}
+
+.notify-empty,
+.notify-panel li a,
+.notify-panel li button {
+  display: block;
+  width: 100%;
+  padding: 12px 14px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.notify-empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.notify-panel ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.notify-panel li + li {
+  border-top: 1px solid var(--line);
+}
+
+.notify-panel a,
+.notify-panel button {
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.notify-panel a:hover,
+.notify-panel button:hover {
+  background: var(--moss);
+}
+
+.notify-panel strong {
+  display: block;
+  font-size: 14px;
+}
+
+.notify-panel span {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+
+@media (max-width: 1023px) {
+  .wo-createbar-desktop,
+  .notify--bar {
+    display: none;
+  }
+}
+
 
 .wo-create {
   position: relative;
