@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { addAoMaterialAction } from "@/app/actions/products";
 import { ProductThumb } from "@/components/ProductThumb";
 import { SubmitButton } from "@/components/SubmitButton";
+import { formatKrAmount } from "@/lib/money";
 
 type AoHit = {
   sku: string;
@@ -11,6 +12,8 @@ type AoHit = {
   name: string;
   unit: string;
   imageUrl?: string;
+  costPrice?: number;
+  salePrice?: number;
 };
 
 export function AoProductSearch({
@@ -95,6 +98,7 @@ export function AoProductSearch({
                     {hit.sku}
                     {hit.barcode ? ` · ${hit.barcode}` : ""}
                     {hit.unit ? ` · ${hit.unit}` : ""}
+                    {hit.salePrice ? ` · ${formatKrAmount(hit.salePrice)}` : ""}
                   </span>
                 </div>
                 <input name="quantity" defaultValue="1" aria-label="Antal" />

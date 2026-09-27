@@ -702,6 +702,8 @@ describe("AO-katalog", () => {
             MeasuringUnit: "STK",
             Url: "/skrue-undersaenket-4x60-1039003679",
             ImageUrlMedium: "https://cdn.example/skrue.jpg",
+            Salgspris: 12.5,
+            Indkobspris: 8,
           }),
           { status: 200, headers: { "content-type": "application/json" } },
         );
@@ -725,6 +727,12 @@ describe("AO-katalog", () => {
           { status: 200, headers: { "content-type": "application/json" } },
         );
       }
+      if (url.includes("GetItemDetails") && url.includes("1017060498")) {
+        return new Response(JSON.stringify({ Name: "Fuga", Price: "47.5", CampaignPrice: "0" }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        });
+      }
       return new Response(JSON.stringify({ Produkter: [] }), { status: 200 });
     };
 
@@ -732,12 +740,15 @@ describe("AO-katalog", () => {
     assert.equal(exact?.name, "SKRUE UNDERSÆNKET 4X60");
     assert.equal(exact?.barcode, "5703302001779");
     assert.equal(exact?.imageUrl, "https://cdn.example/skrue.jpg");
+    assert.equal(exact?.salePrice, 1250);
+    assert.equal(exact?.costPrice, 800);
 
     const hits = await searchAoCatalog("FUGA", { fetch: fetchImpl });
     assert.equal(hits.length, 1);
     assert.equal(hits[0]?.sku, "1017060498");
     assert.equal(hits[0]?.barcode, "5703302166478");
     assert.equal(hits[0]?.imageUrl, "https://cdn.example/fuga.jpg");
+    assert.equal(hits[0]?.salePrice, 4750);
 
     const bySku = await searchAoCatalog("1039003679", { fetch: fetchImpl });
     assert.equal(bySku[0]?.sku, "1039003679");

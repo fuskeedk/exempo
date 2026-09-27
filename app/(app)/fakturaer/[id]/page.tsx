@@ -123,7 +123,7 @@ export default async function InvoiceDetailPage({
         <input type="hidden" name="invoiceId" value={invoice.id} />
         {invoice.status === "KLADDE" ? (
           <button name="status" value="SENDT" className="rounded-full bg-rust px-4 py-2.5 text-sm font-semibold text-white">
-            Markér som sendt
+            Send til kunden
           </button>
         ) : null}
         {["SENDT", "RYKKET", "INKASSO"].includes(invoice.status) ? (

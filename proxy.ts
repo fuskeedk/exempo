@@ -30,6 +30,7 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith("/api/sproom") ||
     pathname.startsWith("/api/tilbud/svar") ||
     pathname.startsWith("/api/indkob/mail") ||
+    pathname.startsWith("/api/cron") ||
     pathname.startsWith("/api/firma-logo")
   ) {
     return NextResponse.next();

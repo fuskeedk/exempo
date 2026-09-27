@@ -5,6 +5,8 @@ export type AoCatalogItem = {
   unit: string;
   url: string;
   imageUrl: string;
+  costPrice: number;
+  salePrice: number;
 };
 
 export type AoCatalogFetch = (input: string | URL, init?: RequestInit) => Promise<Response>;
@@ -40,12 +42,34 @@ export function aoImageUrl(raw: Record<string, unknown> | null | undefined) {
   );
 }
 
+function kronerToOre(value: unknown) {
+  if (typeof value === "number" && Number.isFinite(value) && value > 0) {
+    return Math.round(value * 100);
+  }
+  if (typeof value === "string" && value.trim()) {
+    const parsed = Number(value.replace(/\s/g, "").replace(",", "."));
+    if (Number.isFinite(parsed) && parsed > 0) return Math.round(parsed * 100);
+  }
+  return 0;
+}
+
+function firstPrice(raw: Record<string, unknown>, keys: string[]) {
+  for (const key of keys) {
+    const ore = kronerToOre(raw[key]);
+    if (ore > 0) return ore;
+  }
+  return 0;
+}
+
 function asItem(raw: Record<string, unknown> | null | undefined): AoCatalogItem | null {
   if (!raw) return null;
   const sku = String(raw.Varenr ?? raw.ItemNumber ?? raw.itemNumber ?? "").trim();
   const name = String(raw.Name ?? raw.name ?? "").replace(/\s+/g, " ").trim();
   if (!sku || !name) return null;
   const unit = String(raw.Maalingsenhed ?? raw.MeasuringUnit ?? raw.itemunit ?? "stk").trim() || "stk";
+  const costPrice = firstPrice(raw, ["Indkobspris", "Indkøbspris", "CostPrice", "NetPrice", "Nettopris"]);
+  const salePrice =
+    firstPrice(raw, ["Salgspris", "SalesPrice", "Price", "VeilPris", "VejlPris", "ListPrice"]) || costPrice;
   return {
     sku,
     barcode: firstBarcode(raw.EAN ?? raw.ean),
@@ -53,6 +77,8 @@ function asItem(raw: Record<string, unknown> | null | undefined): AoCatalogItem 
     unit: unit.toLowerCase(),
     url: absoluteAoUrl(raw.Url ?? raw.url) || `${AO_ORIGIN}/`,
     imageUrl: aoImageUrl(raw),
+    costPrice,
+    salePrice,
   };
 }
 
@@ -80,6 +106,24 @@ async function aoGet(path: string, query: Record<string, string>, fetchImpl: AoC
   });
 }
 
+async function listPriceFor(sku: string, fetchImpl: AoCatalogFetch) {
+  const payload = await readJson(await aoGet("/api/v2/ItemDetail/GetItemDetails", { productNumber: sku }, fetchImpl));
+  if (!payload || typeof payload !== "object") return 0;
+  const raw = payload as Record<string, unknown>;
+  return firstPrice(raw, ["CampaignPrice", "Price", "Salgspris", "SalesPrice"]);
+}
+
+async function withListPrices(items: AoCatalogItem[], fetchImpl: AoCatalogFetch) {
+  await Promise.all(
+    items.map(async (item) => {
+      if (item.salePrice > 0) return;
+      const price = await listPriceFor(item.sku, fetchImpl);
+      if (price > 0) item.salePrice = price;
+    }),
+  );
+  return items;
+}
+
 export async function lookupAoProduct(
   code: string,
   opts: { fetch?: AoCatalogFetch } = {},
@@ -89,7 +133,10 @@ export async function lookupAoProduct(
   const fetchImpl = opts.fetch ?? fetch;
   const payload = await readJson(await aoGet("/api/v2/Produkt/GetSingleItemData", { productNumber: query }, fetchImpl));
   if (!payload || typeof payload !== "object" || "Message" in (payload as object)) return null;
-  return asItem(payload as Record<string, unknown>);
+  const item = asItem(payload as Record<string, unknown>);
+  if (!item) return null;
+  await withListPrices([item], fetchImpl);
+  return item;
 }
 
 export async function searchAoCatalog(
@@ -137,5 +184,7 @@ export async function searchAoCatalog(
     push(await lookupAoProduct(term.replace(/^0+/, ""), { fetch: fetchImpl }));
   }
 
-  return items.slice(0, limit);
+  const page = items.slice(0, limit);
+  await withListPrices(page, fetchImpl);
+  return page;
 }
