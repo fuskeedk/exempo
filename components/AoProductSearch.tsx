@@ -45,13 +45,14 @@ export function AoProductSearch({
           const response = await fetch(`/api/ao/search?q=${encodeURIComponent(term)}`);
           const payload = (await response.json()) as { items?: AoHit[]; error?: string; disabled?: boolean };
           if (id !== requestId.current) return;
-          if (payload.disabled) {
+          const items = Array.isArray(payload.items) ? payload.items : [];
+          if (payload.disabled && items.length === 0) {
             setHits([]);
             setSearched(term);
             setError("AO-varesøgning er slået fra under Grossistaftaler.");
             return;
           }
-          setHits(Array.isArray(payload.items) ? payload.items : []);
+          setHits(items);
           setSearched(term);
           setError(payload.error ?? "");
         } catch {

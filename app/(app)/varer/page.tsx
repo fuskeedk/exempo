@@ -1,4 +1,5 @@
-import { createProductAction } from "@/app/actions/products";
+import { createProductAction, importCatalogAction } from "@/app/actions/products";
+import { Flash } from "@/components/Flash";
 import { SubmitButton } from "@/components/SubmitButton";
 import { Card, Field, Input, PageHeader, Select } from "@/components/ui";
 import { requireRole } from "@/lib/auth";
@@ -6,10 +7,19 @@ import { requireProductCatalog } from "@/lib/modules";
 import { formatKr } from "@/lib/money";
 import { prisma } from "@/lib/prisma";
 
-export default async function ProductsPage() {
+export default async function ProductsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ besked?: string }>;
+}) {
   const session = await requireRole(["ADMIN", "PL"]);
   await requireProductCatalog(session);
-  const products = await prisma.product.findMany({ orderBy: { name: "asc" } });
+  const { besked } = await searchParams;
+  const [products, wholesalers] = await Promise.all([
+    prisma.product.findMany({ orderBy: { name: "asc" } }),
+    prisma.wholesalerAgreement.findMany({ orderBy: { name: "asc" }, select: { name: true } }),
+  ]);
+  const groups = [...new Set(["GROSSIST", "STARK", "Bygma", "Solar", "Lemvigh-Müller", "Brødrene Dahl", ...wholesalers.map((row) => row.name)])];
   return (
     <>
       <PageHeader
@@ -17,6 +27,7 @@ export default async function ProductsPage() {
         title="Varekatalog"
         description="Egne varer med varenr. og stregkode. AO-varer søges direkte på arbejdssedlen og Min dag, så I ikke behøver at taste hele kataloget ind her."
       />
+      <Flash message={besked} />
       <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
         <Card className="overflow-x-auto p-0">
           <table className="w-full text-left text-sm">
@@ -79,6 +90,22 @@ export default async function ProductsPage() {
                 <Input name="salePrice" />
               </Field>
               <SubmitButton>Opret vare</SubmitButton>
+            </form>
+            <h2 className="mt-8 font-serif text-xl">Importer prisliste</h2>
+            <form action={importCatalogAction} className="mt-4 grid gap-3">
+              <Field label="Grossist">
+                <Select name="group" defaultValue="GROSSIST">
+                  {groups.map((name) => (
+                    <option key={name} value={name}>
+                      {name}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+              <Field label="CSV">
+                <Input name="file" type="file" accept=".csv,text/csv,text/plain" required />
+              </Field>
+              <SubmitButton>Importer</SubmitButton>
             </form>
           </Card>
       </div>

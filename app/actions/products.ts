@@ -1,8 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/auth";
 import { aoSearchEnabled, lookupAoProduct, searchAoCatalog, type AoCatalogItem } from "@/lib/ao-catalog";
+import { parseCatalogCsv } from "@/lib/catalog-import";
 import { requireProductCatalog } from "@/lib/modules";
 import { parseKrToOre } from "@/lib/money";
 import { prisma } from "@/lib/prisma";
@@ -31,6 +33,73 @@ export async function createProductAction(formData: FormData) {
     },
   });
   revalidatePath("/varer");
+}
+
+export async function importCatalogAction(formData: FormData) {
+  await requireRole(["ADMIN", "PL"]);
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) {
+    throw new Error("Vælg en CSV-fil.");
+  }
+  if (file.size > 8 * 1024 * 1024) {
+    throw new Error("Filen må højst være 8 MB.");
+  }
+  const group = str(formData, "group") || "GROSSIST";
+  const rows = parseCatalogCsv(await file.text());
+  let created = 0;
+  let updated = 0;
+  let skipped = 0;
+  for (let i = 0; i < rows.length; i += 80) {
+    const chunk = rows.slice(i, i + 80);
+    const existing = await prisma.product.findMany({
+      where: { sku: { in: chunk.map((row) => row.sku) } },
+      select: { id: true, sku: true, group: true, costPrice: true, salePrice: true, barcode: true, unit: true },
+    });
+    const bySku = new Map(existing.map((row) => [row.sku, row]));
+    await prisma.$transaction(
+      chunk.map((row) => {
+        const current = bySku.get(row.sku);
+        if (!current) {
+          created += 1;
+          return prisma.product.create({
+            data: {
+              sku: row.sku,
+              name: row.name,
+              barcode: row.barcode,
+              unit: row.unit,
+              group,
+              costPrice: row.costPrice,
+              salePrice: row.salePrice,
+              billable: true,
+              active: true,
+            },
+          });
+        }
+        if (current.group === "EGNE") {
+          skipped += 1;
+          return prisma.product.findUniqueOrThrow({ where: { id: current.id } });
+        }
+        updated += 1;
+        return prisma.product.update({
+          where: { id: current.id },
+          data: {
+            name: row.name,
+            barcode: row.barcode || current.barcode,
+            unit: row.unit || current.unit,
+            group,
+            costPrice: row.costPrice > 0 ? row.costPrice : current.costPrice,
+            salePrice: row.salePrice > 0 ? row.salePrice : current.salePrice,
+            active: true,
+          },
+        });
+      }),
+    );
+  }
+  revalidatePath("/varer");
+  revalidatePath("/sager");
+  const next = str(formData, "next");
+  const path = next.startsWith("/") && !next.startsWith("//") ? next.split("?")[0] : "/varer";
+  redirect(`${path}?besked=${encodeURIComponent(`${created} nye, ${updated} opdateret, ${skipped} sprunget over.`)}${path.includes("indstillinger") ? "#grossist" : ""}`);
 }
 
 async function attachProductToCase(caseId: string, product: {
@@ -157,9 +226,16 @@ export async function addAoMaterialAction(formData: FormData) {
   const caseId = str(formData, "caseId");
   const sku = str(formData, "sku");
   const quantity = Number.parseFloat(str(formData, "quantity").replace(",", ".")) || 1;
-  if (!sku) throw new Error("AO-varenr. mangler.");
+  if (!sku) throw new Error("Varenr. mangler.");
+  const local = await prisma.product.findFirst({
+    where: { active: true, OR: [{ sku }, { barcode: sku }] },
+  });
+  if (local) {
+    await attachProductToCase(caseId, local, quantity);
+    return;
+  }
   const account = await aoAccountNumber();
-  if (account === null) throw new Error("AO-varesøgning er slået fra under Grossistaftaler.");
+  if (account === null) throw new Error("Varen findes ikke i kataloget.");
   const hit = (await lookupAoProduct(sku)) ?? (await searchAoCatalog(sku, { account, limit: 3 })).find((item) => item.sku === sku);
   if (!hit) throw new Error("AO-varen blev ikke fundet.");
   const product = await upsertAoProduct(hit);
