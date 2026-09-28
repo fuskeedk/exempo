@@ -8,6 +8,8 @@ export const SETTING_DEFAULTS: Record<string, string> = {
   company_postal: "",
   company_city: "",
   company_phone: "",
+  sms_sender: "",
+  sms_token: "",
   company_email: "",
   company_domain: "",
   company_bank_name: "",
@@ -61,6 +63,7 @@ export const SECRET_SETTING_KEYS = new Set([
   "billy_api_key",
   "dinero_api_key",
   "dinero_client_secret",
+  "sms_token",
 ]);
 
 export async function getSettings(): Promise<Record<string, string>> {

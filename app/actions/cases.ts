@@ -8,6 +8,7 @@ import { canManageOffice, requireRole, requireSession } from "@/lib/auth";
 import { isTrade, isPricingMode, isOrderType, canDeleteCase } from "@/lib/catalog";
 import { defaultSlotOnDay, FULL_DAY_CLOCK_HOURS, parseDateInput, parseDayParam, shiftScheduleToDay, slotAtHour, atTimeOnDay } from "@/lib/dates";
 import { canTransition, isCaseState, isTimeLocked, TIME_LOCKED_MESSAGE, type CaseState } from "@/lib/fsm";
+import { electricianSlutkontrolDone } from "@/lib/kls-catalog";
 import { parseKrToOre } from "@/lib/money";
 import { ensureCustomerFromForm } from "@/lib/customer-from-form";
 import { nextCaseNumber } from "@/lib/numbers";
@@ -165,6 +166,23 @@ export async function transitionCaseAction(formData: FormData) {
   });
   if (!result.ok) {
     return bounceCase(caseId, result.reason);
+  }
+  const finishing = toState === "KLAR_TIL_FAKTURA" || toState === "FAKTURERET" || toState === "AFSLUTTET";
+  if (finishing && packed.sag.trade === "ELEKTRIKER") {
+    const reports = await prisma.klsReport.findMany({
+      where: { caseId },
+      include: { template: { select: { name: true } }, checks: { select: { status: true } } },
+    });
+    const done = electricianSlutkontrolDone(
+      reports.map((report) => ({
+        templateName: report.template.name,
+        signedAt: report.signedAt,
+        checks: report.checks,
+      })),
+    );
+    if (!done) {
+      return bounceCase(caseId, "Slutkontrol skal være udfyldt og underskrevet, før sagen færdigmeldes.");
+    }
   }
 
   await prisma.$transaction([

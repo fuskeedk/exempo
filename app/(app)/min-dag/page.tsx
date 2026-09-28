@@ -9,7 +9,8 @@ import {
 import { addCatalogMaterialAction, addMaterialByBarcodeAction } from "@/app/actions/products";
 import { AoProductSearch } from "@/components/AoProductSearch";
 import { takeFromVanAction } from "@/app/actions/van";
-import { uploadDocumentAction } from "@/app/actions/documents";
+import { CustomerSms } from "@/components/CustomerSms";
+import { FieldPhotoForm } from "@/components/FieldPhotoForm";
 import { Flash } from "@/components/Flash";
 import { MapButton, PhoneLink } from "@/components/ContactActions";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -368,6 +369,7 @@ export default async function MyDayPage({
                       <PhoneLink phone={job.customerPhone} className="text-pine hover:underline" />
                     </p>
                   ) : null}
+                  <CustomerSms caseId={job.id} phone={job.customerPhone} next="/min-dag" />
                   <MapButton address={formatPlace([job.customerAddress, job.customerCity])} />
                   {bookings.length > 0 ? (
                     <p className="mt-1 text-sm text-muted">
@@ -423,12 +425,7 @@ export default async function MyDayPage({
               <div className="mt-2">
                 <AoProductSearch caseId={job.id} />
               </div>
-              <form action={uploadDocumentAction} className="mt-3 grid gap-2 sm:grid-cols-2">
-                <input type="hidden" name="caseId" value={job.id} />
-                <input type="hidden" name="category" value="FOTO" />
-                <Input type="file" name="file" accept="image/*" required />
-                <SubmitButton variant="secondary">Foto</SubmitButton>
-              </form>
+              <FieldPhotoForm caseId={job.id} />
               {vanOn && vanItems.length > 0 ? (
                 <form action={takeFromVanAction} className="mt-3 grid gap-2 sm:grid-cols-[1fr_80px_auto]">
                   <input type="hidden" name="caseId" value={job.id} />

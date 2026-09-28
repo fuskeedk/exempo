@@ -47,6 +47,11 @@ function periodLabel(period: string) {
   return isTimesheetPeriod(period) ? TIMESHEET_PERIOD_LABELS[period] : period;
 }
 
+export function payrollExportFilter(status: string | null) {
+  if (!status || status === "alle") return { in: ["GODKENDT"] };
+  return status;
+}
+
 function statusLabel(status: string) {
   return isTimesheetStatus(status) ? TIMESHEET_STATUS_LABELS[status] : status;
 }

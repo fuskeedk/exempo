@@ -7,6 +7,7 @@ import {
   saveModulesSettingsAction,
   saveNumberSettingsAction,
   savePayrollSettingsAction,
+  saveSmsSettingsAction,
   saveSproomSettingsAction,
   sendTestMailAction,
   testIntegrationAction,
@@ -644,6 +645,27 @@ export default async function SettingsPage({
               <SubmitButton variant="secondary">Tjek Dataløn</SubmitButton>
             </form>
           </div>
+        </Card>
+
+        <Card id="sms">
+          <h2 className="font-serif text-xl">SMS</h2>
+          <form action={saveSmsSettingsAction} className="mt-4 grid gap-4 sm:grid-cols-2">
+            <label className="block">
+              <Label>Afsender</Label>
+              <Input name="sms_sender" defaultValue={settings.sms_sender} maxLength={11} />
+            </label>
+            <label className="block">
+              <Label>GatewayAPI-token</Label>
+              <Input name="sms_token" type="password" placeholder={secretHint("sms_token", settings)} />
+            </label>
+            <div className="sm:col-span-2">
+              <SubmitButton>Gem SMS</SubmitButton>
+            </div>
+          </form>
+          <form action={testIntegrationAction} className="mt-3">
+            <input type="hidden" name="kind" value="sms" />
+            <SubmitButton variant="secondary">Tjek SMS</SubmitButton>
+          </form>
         </Card>
 
         <Card id="bogforing">

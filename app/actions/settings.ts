@@ -9,6 +9,7 @@ import { buildMailTestMessage, mailProfileFromAccount, parseMailAccountInput, se
 import { prisma } from "@/lib/prisma";
 import { isEmail } from "@/lib/quote-email";
 import { formatSerial } from "@/lib/serial";
+import { pingAccounting } from "@/lib/bookkeeping";
 import { formFlag, getSettings, SECRET_SETTING_KEYS, setSetting, setSettings } from "@/lib/settings";
 import { lookupLogin, registerLogin, unregisterLogin } from "@/lib/platform";
 import { removeCompanyLogo, saveCompanyLogo } from "@/lib/logo";
@@ -170,6 +171,19 @@ export async function savePayrollSettingsAction(formData: FormData) {
   settingsRedirect("Lønperioden og integrationen er gemt.", { hash: "lon" });
 }
 
+export async function saveSmsSettingsAction(formData: FormData) {
+  await requireRole(["ADMIN", "PL"]);
+  await setSettings(
+    {
+      sms_sender: str(formData, "sms_sender").slice(0, 11),
+      sms_token: str(formData, "sms_token"),
+    },
+    { keepSecrets: true },
+  );
+  revalidateSettings();
+  settingsRedirect("SMS er gemt.", { hash: "sms" });
+}
+
 export async function saveAccountingSettingsAction(formData: FormData) {
   await requireRole(["ADMIN", "PL"]);
   await setSettings(
@@ -194,6 +208,31 @@ export async function testIntegrationAction(formData: FormData) {
   await requireRole(["ADMIN", "PL"]);
   const kind = str(formData, "kind");
   const settings = await getSettings();
+  if (kind === "economic" || kind === "billy" || kind === "dinero") {
+    const label = kind === "economic" ? "E-conomic" : kind === "billy" ? "Billy" : "Dinero";
+    const ping = await pingAccounting({
+      accounting_provider: kind,
+      economic_agreement_grant: settings.economic_agreement_grant,
+      economic_app_secret: settings.economic_app_secret,
+      billy_api_key: settings.billy_api_key,
+      billy_org_id: settings.billy_org_id,
+      dinero_api_key: settings.dinero_api_key,
+      dinero_org_id: settings.dinero_org_id,
+      dinero_client_id: settings.dinero_client_id,
+      dinero_client_secret: settings.dinero_client_secret,
+    });
+    settingsRedirect(ping.ok ? `${label} svarer.` : ping.reason, { error: !ping.ok, hash: "bogforing" });
+  }
+  if (kind === "sms") {
+    if (!settings.sms_token) settingsRedirect("Udfyld SMS-token.", { error: true, hash: "sms" });
+    const response = await fetch("https://gatewayapi.com/rest/me", {
+      headers: { Authorization: `Token ${settings.sms_token}` },
+    });
+    settingsRedirect(response.ok ? "GatewayAPI svarer." : "SMS-token blev afvist.", {
+      error: !response.ok,
+      hash: "sms",
+    });
+  }
   const filled = (key: string) => Boolean(settings[key]);
   const messages: Record<string, string> = {
     sproom: filled("sproom_api_token")

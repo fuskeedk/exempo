@@ -36,6 +36,18 @@ export const DEFAULT_KLS_TEMPLATES: KlsTemplateSeed[] = [
     ],
   },
   {
+    name: "Slutkontrol — El",
+    trade: "ELEKTRIKER",
+    items: [
+      "Tavle mærket",
+      "Fejlstrømsafbryder testet",
+      "Isolationsmodstand målt",
+      "Overgangsmodstand målt",
+      "Kredse funktionstestet",
+      "Kapslinger lukket",
+    ],
+  },
+  {
     name: "KLS — El-installation",
     trade: "ELEKTRIKER",
     items: [
@@ -159,3 +171,15 @@ export function sortKlsTemplates<T extends { trade: string; name: string }>(temp
 }
 
 export const KLS_TRADE_OPTIONS = CASE_TRADES;
+
+export const SLUTKONTROL_EL = "Slutkontrol — El";
+
+const DONE_CHECK = new Set(["OK", "NA", "AFVIGELSE"]);
+
+export function electricianSlutkontrolDone(
+  reports: Array<{ templateName: string; signedAt: Date | string | null; checks: Array<{ status: string }> }>,
+) {
+  const report = reports.find((row) => row.templateName === SLUTKONTROL_EL);
+  if (!report?.signedAt || report.checks.length === 0) return false;
+  return report.checks.every((check) => DONE_CHECK.has(check.status));
+}

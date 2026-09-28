@@ -390,6 +390,7 @@ model Invoice {
   kind          String        @default("FAKTURA")
   reminderLevel Int           @default(0)
   notes         String        @default("")
+  externalRef   String        @default("")
   issuedAt      DateTime      @default(now())
   dueAt         DateTime?
   paidAt        DateTime?
