@@ -19,8 +19,8 @@ import { Card, Field, Input, Select, Textarea } from "@/components/ui";
 import type { SessionUser } from "@/lib/auth";
 import { canManageOffice, canSeeCaseCoverage } from "@/lib/auth";
 import {
-  DOCUMENT_CATEGORIES,
   DOCUMENT_LABELS,
+  DOCUMENT_UPLOAD_CATEGORIES,
   EXTRA_STATUS_LABELS,
   TIME_KIND_LABELS,
   TIME_KINDS,
@@ -296,7 +296,7 @@ export function DocumentsPanel({ sag }: { sag: CaseFull }) {
         <input type="hidden" name="caseId" value={sag.id} />
         <Input type="file" name="file" required />
         <Select name="category" defaultValue="FOTO">
-          {DOCUMENT_CATEGORIES.map((category) => (
+          {DOCUMENT_UPLOAD_CATEGORIES.map((category) => (
             <option key={category} value={category}>
               {DOCUMENT_LABELS[category]}
             </option>

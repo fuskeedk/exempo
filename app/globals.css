@@ -1517,6 +1517,47 @@ a {
   font-size: 12px;
 }
 
+.wo-folders {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.wo-folder {
+  min-width: 5.5rem;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  background: #fff;
+  padding: 8px 12px;
+  text-align: left;
+  font-size: 14px;
+  line-height: 1.2;
+}
+
+.wo-folder small {
+  display: block;
+  margin-top: 2px;
+  color: #777;
+  font-size: 11px;
+}
+
+.wo-folder.is-active {
+  background: var(--pine);
+  color: #f4efe4;
+  border-color: var(--pine);
+}
+
+.wo-folder.is-active small {
+  color: color-mix(in srgb, #f4efe4 72%, transparent);
+}
+
+@media (max-width: 720px) {
+  .wo-folder {
+    flex: 1 1 calc(50% - 8px);
+  }
+}
+
 .wo-doc-tools {
   display: flex;
   flex-wrap: wrap;

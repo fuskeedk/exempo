@@ -22,7 +22,16 @@ export async function uploadDocumentAction(formData: FormData) {
     : "ANDET";
   const extraWorkId = String(formData.get("extraWorkId") ?? "").trim();
   const signerName = String(formData.get("signerName") ?? "").trim();
+  const folderIdRaw = String(formData.get("folderId") ?? "").trim();
   const back = caseId ? `/sager/${caseId}` : "/min-dag";
+  let folderId: string | undefined;
+  if (folderIdRaw) {
+    const folder = await prisma.documentFolder.findFirst({
+      where: { id: folderIdRaw, caseId },
+      select: { id: true },
+    });
+    folderId = folder?.id;
+  }
   const file = formData.get("file");
   if (!(file instanceof File) || file.size === 0) {
     redirect(`${back}?besked=${encodeURIComponent("Vælg en fil.")}`);
@@ -44,6 +53,7 @@ export async function uploadDocumentAction(formData: FormData) {
       mimeType: file.type || "application/octet-stream",
       size: file.size,
       category,
+      folderId,
       uploadedById: user.id,
     },
   });
@@ -60,4 +70,20 @@ export async function uploadDocumentAction(formData: FormData) {
 
   revalidatePath(`/sager/${caseId}`);
   revalidatePath("/min-dag");
+}
+
+export async function createDocumentFolderAction(formData: FormData) {
+  await requireSession();
+  const caseId = String(formData.get("caseId") ?? "");
+  const name = String(formData.get("name") ?? "").trim().slice(0, 60);
+  if (!caseId) return;
+  if (!name) {
+    redirect(`/sager/${caseId}?besked=${encodeURIComponent("Angiv et mappenavn.")}`);
+  }
+  const sag = await prisma.case.findUnique({ where: { id: caseId }, select: { id: true } });
+  if (!sag) {
+    redirect(`/sager/${caseId}?besked=${encodeURIComponent("Sagen findes ikke.")}`);
+  }
+  await prisma.documentFolder.create({ data: { caseId, name } });
+  revalidatePath(`/sager/${caseId}`);
 }
