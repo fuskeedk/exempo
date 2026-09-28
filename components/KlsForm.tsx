@@ -5,7 +5,7 @@ import { saveKlsAction, startKlsAction } from "@/app/actions/kls";
 import { SubmitButton } from "@/components/SubmitButton";
 import { Card, Field, Input, Select, Textarea } from "@/components/ui";
 import { KLS_STATUS_LABELS, KLS_STATUSES, type KlsStatus } from "@/lib/catalog";
-import { klsTradeLabel, sortKlsTemplates } from "@/lib/kls-catalog";
+import { SLUTKONTROL_EL, klsTradeLabel, sortKlsTemplates } from "@/lib/kls-catalog";
 import { isNetworkFailure, queueKlsForm } from "@/lib/offline-queue";
 import { formatDateTime } from "@/lib/dates";
 
@@ -40,6 +40,7 @@ export function KlsStartForm({
   }
   const sorted = sortKlsTemplates(templates, trade);
   const preferred =
+    (trade === "ELEKTRIKER" ? sorted.find((template) => template.name === SLUTKONTROL_EL)?.id : undefined) ??
     sorted.find((template) => template.trade === trade)?.id ??
     sorted.find((template) => template.trade === "ANDET")?.id ??
     sorted[0]?.id;
