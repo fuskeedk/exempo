@@ -39,6 +39,7 @@ export async function POST(request: Request) {
           absenceType: payload.absenceType ? String(payload.absenceType) : undefined,
           activityId: payload.activityId ? String(payload.activityId) : undefined,
           source: payload.source === "case" ? "case" : payload.source === "activity" ? "activity" : undefined,
+          ...(payload.fromCaseId ? { fromCaseId: String(payload.fromCaseId) } : {}),
         });
       } else if (item.kind === "kls") {
         const fields = (item.payload?.fields ?? {}) as Record<string, unknown>;
