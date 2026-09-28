@@ -46,7 +46,7 @@ export function DocumentationBoard({
     <>
       <form action={createDocumentFolderAction} className="wo-inline-form">
         <input type="hidden" name="caseId" value={caseId} />
-        <Input name="name" required maxLength={60} />
+        <Input name="name" required maxLength={60} aria-label="Mappe" placeholder="Mappe" />
         <SubmitButton>Ny mappe</SubmitButton>
       </form>
       <div className="wo-folders">
