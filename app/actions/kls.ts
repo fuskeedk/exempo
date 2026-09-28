@@ -25,7 +25,9 @@ export async function startKlsAction(formData: FormData): Promise<KlsActionResul
     include: { items: true },
   });
   if (!sag || !template) return { error: "Sag eller skabelon mangler." };
-  if (sag.klsReports.length > 0) return { error: "Der findes allerede et KLS på sagen." };
+  if (sag.klsReports.some((row) => row.templateId === templateId)) {
+    return { error: "Det skema er allerede tilføjet på sagen." };
+  }
 
   await prisma.klsReport.create({
     data: {

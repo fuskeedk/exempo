@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { deleteTimesheetActivity, saveTimesheetActivity, searchActivityCases } from "@/app/actions/field";
+import { enqueueOutbox, isNetworkFailure } from "@/lib/offline-queue";
 import { ABSENCE_TYPES, ABSENCE_TYPE_LABELS, type AbsenceType } from "@/lib/catalog";
 import {
   billedHours,
@@ -107,28 +108,39 @@ export function ActivityDialog({
   function submit(intent: "plan" | "register") {
     setError(null);
     const usePlanned = intent === "register" && isPlanned && usePlannedDuration;
+    const payload = {
+      intent,
+      kind,
+      date,
+      startHour: usePlanned ? draft.startHour : startHour,
+      startMinute: usePlanned ? draft.startMinute : startMinute,
+      endHour: usePlanned ? draft.endHour : endHour,
+      endMinute: usePlanned ? draft.endMinute : endMinute,
+      allDay: usePlanned
+        ? looksLikeFullDay(draft.startHour, draft.startMinute, draft.endHour, draft.endMinute)
+        : allDay,
+      caseId: kind === "FRAVAER" ? "" : caseId.trim(),
+      note,
+      forUserId,
+      absenceType,
+      activityId: draft.activityId,
+      source: draft.source,
+    };
     startTransition(async () => {
       try {
-        await saveTimesheetActivity({
-          intent,
-          kind,
-          date,
-          startHour: usePlanned ? draft.startHour : startHour,
-          startMinute: usePlanned ? draft.startMinute : startMinute,
-          endHour: usePlanned ? draft.endHour : endHour,
-          endMinute: usePlanned ? draft.endMinute : endMinute,
-          allDay: usePlanned
-            ? looksLikeFullDay(draft.startHour, draft.startMinute, draft.endHour, draft.endMinute)
-            : allDay,
-          caseId: kind === "FRAVAER" ? "" : caseId.trim(),
-          note,
-          forUserId,
-          absenceType,
-          activityId: draft.activityId,
-          source: draft.source,
-        });
+        if (typeof navigator !== "undefined" && navigator.onLine === false) {
+          await enqueueOutbox("time", payload);
+          onClose();
+          return;
+        }
+        await saveTimesheetActivity(payload);
         onClose();
       } catch (err) {
+        if (isNetworkFailure(err)) {
+          await enqueueOutbox("time", payload);
+          onClose();
+          return;
+        }
         setError(err instanceof Error ? err.message : "Kunne ikke gemme aktiviteten.");
       }
     });

@@ -22,6 +22,7 @@ import { WorkOrderPipeline } from "@/components/WorkOrderClient";
 import { DeleteCaseButton } from "@/components/DeleteCaseButton";
 import { PrintButton } from "@/components/PrintButton";
 import { ContactBlock } from "@/components/ContactActions";
+import { CustomerSms } from "@/components/CustomerSms";
 import {
   DescriptionEditor,
   EditableSection,
@@ -242,6 +243,7 @@ export function WorkOrder({
                   email={sag.customerEmail}
                   phone={sag.customerPhone}
                 />
+                <CustomerSms caseId={sag.id} phone={sag.customerPhone} next={`/sager/${sag.id}`} />
               </div>
               <p className="wo-aside-note">
                 Næste planlagte tid:{" "}

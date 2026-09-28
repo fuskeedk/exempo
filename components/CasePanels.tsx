@@ -342,37 +342,40 @@ export function KlsPanel({
   sag: CaseFull;
   templates: Template[];
 }) {
-  const report = sag.klsReports[0];
-  if (!report) {
-    return (
-      <KlsStartForm
-        caseId={sag.id}
-        trade={sag.trade}
-        templates={templates.map((template) => ({
-          id: template.id,
-          name: template.name,
-          trade: template.trade,
-        }))}
-      />
-    );
-  }
-
+  const used = new Set(sag.klsReports.map((report) => report.templateId));
+  const available = templates.filter((template) => !used.has(template.id));
   return (
-    <KlsForm
-      caseId={sag.id}
-      reportId={report.id}
-      templateName={report.template.name}
-      signedAt={report.signedAt?.toISOString() ?? null}
-      signedByName={report.signedBy?.name ?? null}
-      notes={report.notes}
-      checks={report.checks.map((check) => ({
-        id: check.id,
-        status: check.status,
-        comment: check.comment,
-        label: check.item.label,
-        sortOrder: check.item.sortOrder,
-      }))}
-    />
+    <div className="space-y-4">
+      {sag.klsReports.map((report) => (
+        <KlsForm
+          key={report.id}
+          caseId={sag.id}
+          reportId={report.id}
+          templateName={report.template.name}
+          signedAt={report.signedAt?.toISOString() ?? null}
+          signedByName={report.signedBy?.name ?? null}
+          notes={report.notes}
+          checks={report.checks.map((check) => ({
+            id: check.id,
+            status: check.status,
+            comment: check.comment,
+            label: check.item.label,
+            sortOrder: check.item.sortOrder,
+          }))}
+        />
+      ))}
+      {available.length > 0 || sag.klsReports.length === 0 ? (
+        <KlsStartForm
+          caseId={sag.id}
+          trade={sag.trade}
+          templates={available.map((template) => ({
+            id: template.id,
+            name: template.name,
+            trade: template.trade,
+          }))}
+        />
+      ) : null}
+    </div>
   );
 }
 

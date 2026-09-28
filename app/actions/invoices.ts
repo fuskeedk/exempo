@@ -7,7 +7,9 @@ import { canDeleteInvoice, isInvoiceKind } from "@/lib/catalog";
 import { parseDayParam } from "@/lib/dates";
 import { canTransition } from "@/lib/fsm";
 import { parseKrToOre } from "@/lib/money";
+import { bookInvoice } from "@/lib/bookkeeping";
 import { invoiceCustomerEmail, sendIssuedInvoiceMail } from "@/lib/invoice-email";
+import { getSettings } from "@/lib/settings";
 import { nextInvoiceNumber } from "@/lib/numbers";
 import { prisma } from "@/lib/prisma";
 
@@ -196,6 +198,39 @@ export async function setInvoiceStatusAction(formData: FormData) {
   if (!invoice) throw new Error("Fakturaen findes ikke.");
   if (!["KLADDE", "SENDT", "BETALT"].includes(status)) {
     throw new Error("Ugyldig fakturastatus.");
+  }
+
+  if (status === "SENDT" && invoice.status === "KLADDE" && !invoice.externalRef) {
+    const settings = await getSettings();
+    const booked = await bookInvoice({
+      accounting_provider: settings.accounting_provider,
+      economic_agreement_grant: settings.economic_agreement_grant,
+      economic_app_secret: settings.economic_app_secret,
+      billy_api_key: settings.billy_api_key,
+      billy_org_id: settings.billy_org_id,
+      dinero_api_key: settings.dinero_api_key,
+      dinero_org_id: settings.dinero_org_id,
+      dinero_client_id: settings.dinero_client_id,
+      dinero_client_secret: settings.dinero_client_secret,
+    }, {
+      invoiceNumber: invoice.invoiceNumber,
+      issuedAt: new Date(),
+      lines: invoice.lines.map((line) => ({
+        description: line.description,
+        quantity: line.quantity,
+        unitPrice: line.unitPrice,
+      })),
+      customerName: invoice.case.customerName,
+      email: invoice.customer?.email ?? invoice.case.customer?.email ?? invoice.case.customerEmail,
+      address: invoice.case.customerAddress,
+      postal: invoice.case.customerPostal,
+      city: invoice.case.customerCity,
+      phone: invoice.case.customerPhone,
+    });
+    if (!booked.ok) throw new Error(booked.reason);
+    if (booked.ref) {
+      await prisma.invoice.update({ where: { id: invoiceId }, data: { externalRef: booked.ref } });
+    }
   }
 
   if (status === "SENDT" && invoice.status === "KLADDE") {

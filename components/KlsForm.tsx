@@ -6,6 +6,7 @@ import { SubmitButton } from "@/components/SubmitButton";
 import { Card, Field, Input, Select, Textarea } from "@/components/ui";
 import { KLS_STATUS_LABELS, KLS_STATUSES, type KlsStatus } from "@/lib/catalog";
 import { klsTradeLabel, sortKlsTemplates } from "@/lib/kls-catalog";
+import { isNetworkFailure, queueKlsForm } from "@/lib/offline-queue";
 import { formatDateTime } from "@/lib/dates";
 
 type CheckRow = {
@@ -45,9 +46,11 @@ export function KlsStartForm({
   return (
     <Card>
       <h2 className="font-serif text-xl">KLS</h2>
-      <p className="mt-1 text-sm text-muted">
-        KLS er valgfrit. Tilføj kun en tjekliste, hvis sagen kræver kvalitetsledelse. Sagen kan lukkes og faktureres uden KLS.
-      </p>
+      {trade === "ELEKTRIKER" ? null : (
+        <p className="mt-1 text-sm text-muted">
+          KLS er valgfrit. Tilføj kun en tjekliste, hvis sagen kræver kvalitetsledelse. Sagen kan lukkes og faktureres uden KLS.
+        </p>
+      )}
       {error ? <p className="mt-3 rounded-xl bg-[#f8e8e0] px-3 py-2 text-sm text-[var(--rust)]">{error}</p> : null}
       {sorted.length === 0 ? (
         <p className="mt-4 text-sm text-muted">
@@ -96,11 +99,27 @@ export function KlsForm({
   checks: CheckRow[];
 }) {
   const [error, setError] = useState<string | null>(null);
+  const [queued, setQueued] = useState(false);
   const sorted = checks.slice().sort((a, b) => a.sortOrder - b.sortOrder);
   async function submit(formData: FormData) {
     setError(null);
-    const result = await saveKlsAction(formData);
-    if (result?.error) setError(result.error);
+    setQueued(false);
+    try {
+      if (typeof navigator !== "undefined" && navigator.onLine === false) {
+        await queueKlsForm(formData);
+        setQueued(true);
+        return;
+      }
+      const result = await saveKlsAction(formData);
+      if (result?.error) setError(result.error);
+    } catch (err) {
+      if (isNetworkFailure(err)) {
+        await queueKlsForm(formData);
+        setQueued(true);
+        return;
+      }
+      setError(err instanceof Error ? err.message : "KLS kunne ikke gemmes.");
+    }
   }
   return (
     <Card>
@@ -119,6 +138,7 @@ export function KlsForm({
         )}
       </div>
       {error ? <p className="mt-3 rounded-xl bg-[#f8e8e0] px-3 py-2 text-sm text-[var(--rust)]">{error}</p> : null}
+      {queued ? <p className="mt-3 text-sm text-pine-2">Venter</p> : null}
       {!signedAt ? (
         <p className="mt-3 text-sm text-muted">
           Sæt hvert punkt til OK, Afvigelse eller Ikke relevant, før du underskriver.

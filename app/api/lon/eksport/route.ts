@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { canSeePayroll, getSession } from "@/lib/auth";
 import { parseDayParam } from "@/lib/dates";
-import { timesheetsExcelCsv, timesheetsPayrollCsv } from "@/lib/payroll-export";
+import { payrollExportFilter, timesheetsExcelCsv, timesheetsPayrollCsv } from "@/lib/payroll-export";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(request: Request) {
@@ -19,7 +19,7 @@ export async function GET(request: Request) {
 
   const sheets = await prisma.timesheet.findMany({
     where: {
-      status: !status || status === "alle" ? { in: ["GODKENDT", "AFLEVERET"] } : status,
+      status: payrollExportFilter(status),
       start: from || to ? { gte: from, lt: to ? new Date(to.getTime() + 86400000) : undefined } : undefined,
       ...(session.role === "PL"
         ? { user: { OR: [{ managerId: session.id }, { managerId: null }, { id: session.id }] } }

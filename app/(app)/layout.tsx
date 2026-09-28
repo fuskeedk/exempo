@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { AppShell } from "@/components/AppShell";
+import { OfflineSync } from "@/components/OfflineSync";
 import { canManageOffice, requireSession } from "@/lib/auth";
 import { loadInbox } from "@/lib/inbox";
 import { getSettings, productCatalogEnabled, vanStockEnabled } from "@/lib/settings";
@@ -24,6 +25,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
       inbox={inbox}
     >
       {children}
+      <OfflineSync />
     </AppShell>
   );
 }

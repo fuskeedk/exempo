@@ -11,6 +11,51 @@ import { prisma } from "@/lib/prisma";
 
 const UPLOAD_DIR = path.join(process.cwd(), "uploads");
 
+export async function persistCaseDocument(input: {
+  caseId: string;
+  userId: string;
+  originalName: string;
+  mimeType: string;
+  bytes: Buffer;
+  category: string;
+  folderId?: string;
+}) {
+  const category: DocumentCategory = DOCUMENT_CATEGORIES.includes(input.category as DocumentCategory)
+    ? (input.category as DocumentCategory)
+    : "ANDET";
+  if (!input.caseId) throw new Error("Sagen mangler.");
+  if (input.bytes.length === 0) throw new Error("Vælg en fil.");
+  if (input.bytes.length > 15 * 1024 * 1024) throw new Error("Filen må højst være 15 MB.");
+  const sag = await prisma.case.findUnique({ where: { id: input.caseId }, select: { id: true } });
+  if (!sag) throw new Error("Sagen findes ikke.");
+  let folderId: string | undefined;
+  if (input.folderId) {
+    const folder = await prisma.documentFolder.findFirst({
+      where: { id: input.folderId, caseId: input.caseId },
+      select: { id: true },
+    });
+    folderId = folder?.id;
+  }
+  await mkdir(UPLOAD_DIR, { recursive: true });
+  const ext = path.extname(input.originalName).slice(0, 12) || (input.mimeType.includes("png") ? ".png" : "");
+  const filename = `${randomUUID()}${ext}`;
+  await writeFile(path.join(UPLOAD_DIR, filename), input.bytes);
+  await prisma.document.create({
+    data: {
+      caseId: input.caseId,
+      filename,
+      originalName: input.originalName.slice(0, 180) || "dokument",
+      mimeType: input.mimeType || "application/octet-stream",
+      size: input.bytes.length,
+      category,
+      folderId,
+      uploadedById: input.userId,
+    },
+  });
+  revalidatePath(`/sager/${input.caseId}`);
+  revalidatePath("/min-dag");
+}
+
 export async function uploadDocumentAction(formData: FormData) {
   const user = await requireSession();
   const caseId = String(formData.get("caseId") ?? "");
@@ -24,39 +69,24 @@ export async function uploadDocumentAction(formData: FormData) {
   const signerName = String(formData.get("signerName") ?? "").trim();
   const folderIdRaw = String(formData.get("folderId") ?? "").trim();
   const back = caseId ? `/sager/${caseId}` : "/min-dag";
-  let folderId: string | undefined;
-  if (folderIdRaw) {
-    const folder = await prisma.documentFolder.findFirst({
-      where: { id: folderIdRaw, caseId },
-      select: { id: true },
-    });
-    folderId = folder?.id;
-  }
   const file = formData.get("file");
   if (!(file instanceof File) || file.size === 0) {
     redirect(`${back}?besked=${encodeURIComponent("Vælg en fil.")}`);
   }
-  if (file.size > 15 * 1024 * 1024) {
-    redirect(`${back}?besked=${encodeURIComponent("Filen må højst være 15 MB.")}`);
-  }
-  await mkdir(UPLOAD_DIR, { recursive: true });
-  const ext = path.extname(file.name).slice(0, 12) || (file.type.includes("png") ? ".png" : "");
-  const filename = `${randomUUID()}${ext}`;
-  const buffer = Buffer.from(await file.arrayBuffer());
-  await writeFile(path.join(UPLOAD_DIR, filename), buffer);
-
-  await prisma.document.create({
-    data: {
+  try {
+    await persistCaseDocument({
       caseId,
-      filename,
+      userId: user.id,
       originalName: signerName ? `Underskrift ${signerName}.png` : file.name,
       mimeType: file.type || "application/octet-stream",
-      size: file.size,
+      bytes: Buffer.from(await file.arrayBuffer()),
       category,
-      folderId,
-      uploadedById: user.id,
-    },
-  });
+      folderId: folderIdRaw,
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Filen kunne ikke gemmes.";
+    redirect(`${back}?besked=${encodeURIComponent(message)}`);
+  }
 
   if (extraWorkId && signerName) {
     const extra = await prisma.extraWork.findFirst({ where: { id: extraWorkId, caseId } });

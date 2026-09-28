@@ -6,6 +6,7 @@ import { WorkOrderDocTools } from "@/components/WorkOrderClient";
 import { SubmitButton } from "@/components/SubmitButton";
 import { Input, Select } from "@/components/ui";
 import { DOCUMENT_LABELS, DOCUMENT_UPLOAD_CATEGORIES, type DocumentCategory } from "@/lib/catalog";
+import { isNetworkFailure, queuePhotoForm, queuePhotoIfOffline } from "@/lib/offline-queue";
 
 type DocRow = {
   id: string;
@@ -28,6 +29,24 @@ export function DocumentationBoard({
   documents: DocRow[];
 }) {
   const [folderId, setFolderId] = useState("");
+  const [notice, setNotice] = useState<string | null>(null);
+  async function upload(formData: FormData) {
+    setNotice(null);
+    try {
+      if (await queuePhotoIfOffline(formData)) {
+        setNotice("Venter");
+        return;
+      }
+      await uploadDocumentAction(formData);
+    } catch (err) {
+      if (isNetworkFailure(err)) {
+        await queuePhotoForm(formData);
+        setNotice("Venter");
+        return;
+      }
+      setNotice(err instanceof Error ? err.message : "Filen kunne ikke gemmes.");
+    }
+  }
   const counts = useMemo(() => {
     const map = new Map<string, number>();
     for (const doc of documents) {
@@ -66,7 +85,8 @@ export function DocumentationBoard({
           </button>
         ))}
       </div>
-      <form action={uploadDocumentAction} className="wo-inline-form" key={folderId}>
+      {notice ? <p className="text-sm text-pine-2">{notice}</p> : null}
+      <form action={upload} className="wo-inline-form" key={folderId}>
         <input type="hidden" name="caseId" value={caseId} />
         <Input type="file" name="file" required />
         <Select name="folderId" defaultValue={folderId}>

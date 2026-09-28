@@ -6,6 +6,8 @@ import { useEffect, useLayoutEffect, useRef, useState, useTransition } from "rea
 import { format } from "date-fns";
 import { da } from "date-fns/locale";
 import { moveCaseOnCalendar, resizeCaseOnCalendar } from "@/app/actions/cases";
+import { submitTimesheetAction } from "@/app/actions/payroll";
+import { SubmitButton } from "@/components/SubmitButton";
 import { moveTimesheetActivity, resizeTimesheetActivity } from "@/app/actions/field";
 import { ActivityDialog, type ActivityCaseOption, type ActivityDraft } from "@/components/ActivityDialog";
 import { BookingResizeHandle } from "@/components/BookingResizeHandle";
@@ -443,6 +445,12 @@ export function TimesheetWeek({
           <StatRow label="Registrerede timer" value={formatHoursDa(registeredHours)} />
           <StatRow label="Arbejdstid" value={formatHoursDa(scheduledHours)} />
           <StatRow label="Fravær" value={formatHoursDa(absenceHours)} />
+          <form action={submitTimesheetAction} className="mt-4">
+            <input type="hidden" name="period" value="UGE" />
+            <input type="hidden" name="dato" value={dateParam ?? ""} />
+            {workerId ? <input type="hidden" name="userId" value={workerId} /> : null}
+            <SubmitButton>Aflever uge</SubmitButton>
+          </form>
           <p className="mt-4 text-xs text-muted">
             Hold musen nede og træk fra start til slut, eller klik et tidspunkt.
           </p>
