@@ -205,9 +205,10 @@ model Case {
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
-  events      CaseEvent[]
-  documents   Document[]
-  timeEntries TimeEntry[]
+  events           CaseEvent[]
+  documents        Document[]
+  documentFolders  DocumentFolder[]
+  timeEntries      TimeEntry[]
   materials   Material[]
   klsReports  KlsReport[]
   invoices    Invoice[]
@@ -232,10 +233,23 @@ model CaseEvent {
   createdAt DateTime @default(now())
 }
 
+model DocumentFolder {
+  id        String     @id @default(cuid())
+  caseId    String
+  case      Case       @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  name      String
+  createdAt DateTime   @default(now())
+  documents Document[]
+
+  @@index([caseId])
+}
+
 model Document {
   id           String   @id @default(cuid())
   caseId       String
   case         Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  folderId     String?
+  folder       DocumentFolder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
   filename     String
   originalName String
   mimeType     String

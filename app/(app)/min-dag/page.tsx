@@ -425,15 +425,9 @@ export default async function MyDayPage({
               </div>
               <form action={uploadDocumentAction} className="mt-3 grid gap-2 sm:grid-cols-2">
                 <input type="hidden" name="caseId" value={job.id} />
-                <input type="hidden" name="category" value="FØR" />
+                <input type="hidden" name="category" value="FOTO" />
                 <Input type="file" name="file" accept="image/*" required />
-                <SubmitButton variant="secondary">Før-foto</SubmitButton>
-              </form>
-              <form action={uploadDocumentAction} className="mt-2 grid gap-2 sm:grid-cols-2">
-                <input type="hidden" name="caseId" value={job.id} />
-                <input type="hidden" name="category" value="EFTER" />
-                <Input type="file" name="file" accept="image/*" required />
-                <SubmitButton variant="secondary">Efter-foto</SubmitButton>
+                <SubmitButton variant="secondary">Foto</SubmitButton>
               </form>
               {vanOn && vanItems.length > 0 ? (
                 <form action={takeFromVanAction} className="mt-3 grid gap-2 sm:grid-cols-[1fr_80px_auto]">

@@ -8,18 +8,17 @@ import {
 import { addCatalogMaterialAction } from "@/app/actions/products";
 import { AoProductSearch } from "@/components/AoProductSearch";
 import { takeFromVanAction } from "@/app/actions/van";
-import { uploadDocumentAction } from "@/app/actions/documents";
+import { DocumentationBoard } from "@/components/DocumentationBoard";
 import { createInvoiceAction } from "@/app/actions/invoices";
 import { createExtraWorkAction, setExtraWorkStatusAction } from "@/app/actions/field";
 import { KlsPanel, StamdataForm, Timeline } from "@/components/CasePanels";
 import { InvoiceBadge } from "@/components/StatusBadge";
-import { PhotoCapture } from "@/components/PhotoCapture";
 import { SignaturePad } from "@/components/SignaturePad";
 import { MaterialPriceCells } from "@/components/MaterialPriceCells";
 import { ProductThumb, materialImageUrl } from "@/components/ProductThumb";
 import { SubmitButton } from "@/components/SubmitButton";
 import { WorkOrderDonut } from "@/components/WorkOrderDonut";
-import { WorkOrderDocTools, WorkOrderPipeline } from "@/components/WorkOrderClient";
+import { WorkOrderPipeline } from "@/components/WorkOrderClient";
 import { DeleteCaseButton } from "@/components/DeleteCaseButton";
 import { PrintButton } from "@/components/PrintButton";
 import { ContactBlock } from "@/components/ContactActions";
@@ -33,7 +32,6 @@ import { Input, Select } from "@/components/ui";
 import type { SessionUser } from "@/lib/auth";
 import { canManageOffice, canSeeCaseCoverage } from "@/lib/auth";
 import {
-  DOCUMENT_CATEGORIES,
   DOCUMENT_LABELS,
   EXTRA_STATUS_LABELS,
   PRICING_MODE_LABELS,
@@ -72,6 +70,7 @@ export type WorkOrderCase = Prisma.CaseGetPayload<{
     projectLeader: true;
     events: { include: { user: true } };
     documents: { include: { uploadedBy: true } };
+    documentFolders: true;
     timeEntries: { include: { user: true } };
     materials: { include: { product: true } };
     invoices: { include: { lines: true } };
@@ -526,30 +525,16 @@ export function WorkOrder({
           </Section>
 
           <Section id="dokumentation" title="Dokumentation">
-            <p className="wo-hint">Tag før- og efterfotos her på sagen.</p>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <PhotoCapture caseId={sag.id} category="FØR" label="Før-foto" />
-              <PhotoCapture caseId={sag.id} category="EFTER" label="Efter-foto" />
-            </div>
-            <form action={uploadDocumentAction} className="wo-inline-form mt-3">
-              <input type="hidden" name="caseId" value={sag.id} />
-              <Input type="file" name="file" required />
-              <Select name="category" defaultValue="FOTO">
-                {DOCUMENT_CATEGORIES.map((category) => (
-                  <option key={category} value={category}>
-                    {DOCUMENT_LABELS[category]}
-                  </option>
-                ))}
-              </Select>
-              <SubmitButton>Tilføj dokumentation</SubmitButton>
-            </form>
-            <WorkOrderDocTools
+            <DocumentationBoard
+              caseId={sag.id}
+              folders={sag.documentFolders.map((folder) => ({ id: folder.id, name: folder.name }))}
               documents={sag.documents.map((doc) => ({
                 id: doc.id,
                 originalName: doc.originalName,
                 mimeType: doc.mimeType,
                 size: doc.size,
                 category: DOCUMENT_LABELS[doc.category as keyof typeof DOCUMENT_LABELS] ?? doc.category,
+                folderId: doc.folderId,
                 createdAt: formatNumericDateTime(doc.createdAt),
                 uploader: doc.uploadedBy?.name ?? "—",
               }))}

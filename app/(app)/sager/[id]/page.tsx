@@ -26,6 +26,7 @@ export default async function CaseDetailPage({
       projectLeader: true,
       events: { include: { user: true }, orderBy: { createdAt: "desc" } },
       documents: { include: { uploadedBy: true }, orderBy: { createdAt: "desc" } },
+      documentFolders: { orderBy: { name: "asc" } },
       timeEntries: { include: { user: true }, orderBy: { date: "desc" } },
       materials: { include: { product: true }, orderBy: { createdAt: "desc" } },
       invoices: { include: { lines: true }, orderBy: { issuedAt: "desc" } },

@@ -47,9 +47,13 @@ export const DOCUMENT_CATEGORIES = [
 ] as const;
 export type DocumentCategory = (typeof DOCUMENT_CATEGORIES)[number];
 
+export const DOCUMENT_UPLOAD_CATEGORIES = DOCUMENT_CATEGORIES.filter(
+  (category) => category !== "FØR" && category !== "EFTER",
+);
+
 export const DOCUMENT_LABELS: Record<DocumentCategory, string> = {
-  "FØR": "Før-foto",
-  EFTER: "Efter-foto",
+  "FØR": "Foto",
+  EFTER: "Foto",
   FOTO: "Foto",
   UNDERSKRIFT: "Underskrift",
   TILBUD: "Tilbud",
