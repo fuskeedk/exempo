@@ -18,6 +18,7 @@ const links = [
 
 const adminLinks = [
   { href: "/medarbejdere", label: "Medarbejdere" },
+  { href: "/teams", label: "Teams" },
   { href: "/lon", label: "Løn" },
   { href: "/okonomi", label: "Omsætning" },
   { href: "/fakturaer", label: "Fakturaer", tour: "nav-fakturaer" },
@@ -30,6 +31,7 @@ const adminLinks = [
 const adminPrefixes = [
   "/administration",
   "/medarbejdere",
+  "/teams",
   "/lon",
   "/overenskomster",
   "/okonomi",

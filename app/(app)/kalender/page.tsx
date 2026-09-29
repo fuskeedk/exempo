@@ -21,6 +21,7 @@ import { calendarActivityWhere, scheduledCaseWhere, registeredCaseDays, isPlanne
 import { uniqueTimesheetJobs } from "@/lib/timesheets";
 import { closestHome, formatKm, formatPlace, geocodeDanishAddress } from "@/lib/geo";
 import { parseHourParam, parseScheduleView, schedulingDays } from "@/lib/scheduling";
+import { planningTeamView } from "@/lib/teams";
 
 function toJob(
   sag: {
@@ -79,6 +80,7 @@ export default async function PlanningPage({
     til?: string;
     afdeling?: string;
     sammenlign?: string;
+    team?: string;
   }>;
 }) {
   const user = await requireRole(["ADMIN", "PL"]);
@@ -88,6 +90,20 @@ export default async function PlanningPage({
   const toHour = Math.max(fromHour + 1, parseHourParam(params.til, 18));
   const compare = params.sammenlign === "1";
   const trade = params.afdeling && isTrade(params.afdeling) ? params.afdeling : "";
+  const teamRows = await prisma.team.findMany({
+    where: user.role === "ADMIN" ? undefined : { leaderId: user.id },
+    include: { members: { select: { userId: true } } },
+    orderBy: { name: "asc" },
+  });
+  const teamView = planningTeamView({
+    role: user.role,
+    requested: params.team,
+    teams: teamRows.map((team) => ({
+      id: team.id,
+      name: team.name,
+      memberIds: team.members.map((member) => member.userId),
+    })),
+  });
   const anchor = params.uge ? parseDayParam(params.uge) : new Date();
   const days = schedulingDays(anchor, view);
   const start = days[0] ?? anchor;
@@ -98,7 +114,9 @@ export default async function PlanningPage({
   const employees = await prisma.user.findMany({
     where: {
       active: true,
-      role: "MEDARBEJDER",
+      ...(teamView.memberIds
+        ? { id: { in: teamView.memberIds.length ? teamView.memberIds : ["__none__"] } }
+        : { role: "MEDARBEJDER" }),
       ...(trade ? { trade } : {}),
     },
     orderBy: { name: "asc" },
@@ -288,6 +306,12 @@ export default async function PlanningPage({
     til: toHour === 18 ? undefined : String(toHour),
     afdeling: trade || undefined,
     sammenlign: compare ? "1" : undefined,
+    team:
+      teamRows.length === 0
+        ? undefined
+        : teamView.selected === "alle" && user.role !== "PL"
+          ? undefined
+          : teamView.selected,
   };
   const step = view === "1" ? 1 : view === "3" ? 3 : 7;
   const prevHref = scheduleHref({ ...shared, uge: toDateInput(addDays(anchor, -step)) });
@@ -342,6 +366,11 @@ export default async function PlanningPage({
           toHour,
           trade,
           trades: TRADES.map((item) => ({ value: item, label: TRADE_LABELS[item] })),
+          team: teamView.selected,
+          teamOptions: [
+            ...(user.role === "PL" && teamRows.length > 1 ? [{ value: "mine", label: "Mine teams" }] : []),
+            ...teamRows.map((team) => ({ value: team.id, label: team.name })),
+          ],
           compare,
           prevHref,
           nextHref,

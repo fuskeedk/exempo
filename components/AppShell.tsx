@@ -24,6 +24,7 @@ const fieldLinks: MobileNavLink[] = [
 
 const adminLinks: MobileNavLink[] = [
   { href: "/medarbejdere", label: "Medarbejdere", icon: "people" },
+  { href: "/teams", label: "Teams", icon: "teams" },
   { href: "/lon", label: "Løn", icon: "pay" },
   { href: "/okonomi", label: "Omsætning", icon: "money" },
   { href: "/fakturaer", label: "Fakturaer", icon: "invoice", tour: "nav-fakturaer" },

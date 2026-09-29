@@ -59,6 +59,8 @@ export type ScheduleToolbar = {
   toHour: number;
   trade: string;
   trades: { value: string; label: string }[];
+  team: string;
+  teamOptions: { value: string; label: string }[];
   compare: boolean;
   prevHref: string;
   nextHref: string;
@@ -320,6 +322,19 @@ export function SchedulingBoard({
             </option>
           ))}
         </select>
+        {toolbar.teamOptions.length ? (
+          <>
+            <span className="sch-label">Team</span>
+            <select name="team" defaultValue={toolbar.team} onChange={submitSoon}>
+              <option value="alle">Alle</option>
+              {toolbar.teamOptions.map((team) => (
+                <option key={team.value} value={team.value}>
+                  {team.label}
+                </option>
+              ))}
+            </select>
+          </>
+        ) : null}
         <label className="sch-check">
           <input type="checkbox" name="sammenlign" value="1" defaultChecked={toolbar.compare} onChange={submitSoon} />
           Sammenlign planlagt og udført tid

@@ -55,6 +55,26 @@ model User {
   timesheets            Timesheet[]
   approvedTimesheets    Timesheet[] @relation("TimesheetApprover")
   vanStock              VanStock[]
+  ledTeams              Team[]       @relation("TeamLeader")
+  teamMemberships       TeamMember[]
+}
+
+model Team {
+  id        String       @id @default(cuid())
+  name      String
+  leaderId  String
+  leader    User         @relation("TeamLeader", fields: [leaderId], references: [id], onDelete: Cascade)
+  createdAt DateTime     @default(now())
+  members   TeamMember[]
+}
+
+model TeamMember {
+  teamId String
+  userId String
+  team   Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([teamId, userId])
 }
 
 model Customer {

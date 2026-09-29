@@ -37,6 +37,12 @@ export default async function AdministrationPage() {
       hint: "Aktive logins — redigér navn, rolle, fag og timepris",
     },
     {
+      href: "/teams",
+      label: "Teams",
+      value: "Hold",
+      hint: "Projektlederens folk på planlægningen",
+    },
+    {
       href: "/okonomi",
       label: "Omsætning",
       value: formatKr(totals.revenue),
