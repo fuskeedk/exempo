@@ -3379,10 +3379,17 @@ a {
 }
 
 .crew-map {
+  position: relative;
+  z-index: 0;
+  isolation: isolate;
   height: 22rem;
   overflow: hidden;
   border: 1px solid #ddd;
   border-radius: 1rem;
+}
+
+.app-overlay {
+  z-index: 1100;
 }
 
 .crew-map .crew-pin {

@@ -273,7 +273,7 @@ export function MobileNav({
       </header>
 
       {menuOpen ? (
-        <div className="fixed inset-0 z-50">
+        <div className="app-overlay fixed inset-0">
           <button
             type="button"
             aria-label="Luk menu"
@@ -374,7 +374,7 @@ export function MobileNav({
       ) : null}
 
       {createOpen ? (
-        <div className="fixed inset-0 z-50">
+        <div className="app-overlay fixed inset-0">
           <button
             type="button"
             aria-label="Luk opret"
