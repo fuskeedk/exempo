@@ -95,22 +95,35 @@ export function closestHome<T extends LatLng & { name: string }>(point: LatLng, 
   return best;
 }
 
+export function geocodeQueryVariants(query: string) {
+  const full = query.replace(/\s+/g, " ").trim();
+  const stripped = full
+    .replace(/,\s*(?:st\.?|kld\.?|\d{1,2}\.)(?:\s+(?:tv|th|mf)\.?|\s+\d{1,3})?(?=\s*(?:,|$))/gi, "")
+    .replace(/\s+,/g, ",")
+    .replace(/,\s*,/g, ",")
+    .replace(/\s+/g, " ")
+    .replace(/^,|,$/g, "")
+    .trim();
+  return [...new Set([stripped, full].filter((item) => item.length >= 3))];
+}
+
 export async function geocodeDanishAddress(query: string, fetchImpl: typeof fetch = fetch): Promise<LatLng | null> {
-  const q = query.trim();
-  if (q.length < 3) return null;
-  const response = await fetchImpl(
-    `https://api.dataforsyningen.dk/adresser?q=${encodeURIComponent(q)}&per_side=1&srid=4326`,
-  );
-  if (!response.ok) return null;
-  const rows = (await response.json()) as Array<{
-    adgangsadresse?: { adgangspunkt?: { koordinater?: number[] } };
-  }>;
-  const point = rows[0]?.adgangsadresse?.adgangspunkt?.koordinater;
-  if (!point || point.length < 2) return null;
-  const lng = Number(point[0]);
-  const lat = Number(point[1]);
-  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
-  return { lat, lng };
+  for (const q of geocodeQueryVariants(query)) {
+    const response = await fetchImpl(
+      `https://api.dataforsyningen.dk/adresser?q=${encodeURIComponent(q)}&per_side=1&srid=4326`,
+    );
+    if (!response.ok) continue;
+    const rows = (await response.json()) as Array<{
+      adgangsadresse?: { adgangspunkt?: { koordinater?: number[] } };
+    }>;
+    const point = rows[0]?.adgangsadresse?.adgangspunkt?.koordinater;
+    if (!point || point.length < 2) continue;
+    const lng = Number(point[0]);
+    const lat = Number(point[1]);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
+    return { lat, lng };
+  }
+  return null;
 }
 
 export function appleMapsUrl(address: string) {

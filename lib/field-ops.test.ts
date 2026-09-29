@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { bookInvoice } from "./bookkeeping";
 import { electricianSlutkontrolDone } from "./kls-catalog";
 import { payrollExportFilter } from "./payroll-export";
-import { closestHome, distanceKm, formatKm } from "./geo";
+import { closestHome, distanceKm, formatKm, geocodeQueryVariants } from "./geo";
 import { customerSmsText, msisdn, smsComposeHref, smsSender } from "./sms";
 
 const invoice = {
@@ -70,6 +70,9 @@ describe("afstand", () => {
     assert.ok(distanceKm(job, { lat: 56.15, lng: 10.2 }) > 100);
     assert.equal(formatKm(4.26), "4,3 km");
     assert.equal(formatKm(18.2), "18 km");
+    assert.equal(geocodeQueryVariants("Vesterbro 14, st. tv, Aalborg")[0], "Vesterbro 14, Aalborg");
+    assert.equal(geocodeQueryVariants("Vesterbrogade 11A, 1. 10, 7100 Vejle")[0], "Vesterbrogade 11A, 7100 Vejle");
+    assert.equal(geocodeQueryVariants("Algade 5, 4000 Roskilde")[0], "Algade 5, 4000 Roskilde");
   });
 });
 
