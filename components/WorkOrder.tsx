@@ -52,6 +52,7 @@ import {
   toDateInput,
 } from "@/lib/dates";
 import { formatPlace } from "@/lib/geo";
+import { customerSmsText } from "@/lib/sms";
 import { allowedTransitions, isCaseState, isTimeLocked, TIME_LOCKED_MESSAGE } from "@/lib/fsm";
 import { formatKr, formatKrAmount, percent } from "@/lib/money";
 import { PURCHASE_STATUS_LABELS } from "@/lib/purchases";
@@ -117,6 +118,7 @@ export function WorkOrder({
   catalogEnabled = false,
   vanEnabled = false,
   plannedActivities = [],
+  companyName = "",
 }: {
   sag: WorkOrderCase;
   economics: CaseEconomics;
@@ -128,6 +130,7 @@ export function WorkOrder({
   catalogEnabled?: boolean;
   vanEnabled?: boolean;
   plannedActivities?: PlannedSlotSource[];
+  companyName?: string;
 }) {
   const office = canManageOffice(user.role);
   const showCoverage = canSeeCaseCoverage(user, sag.projectLeaderId);
@@ -243,7 +246,21 @@ export function WorkOrder({
                   email={sag.customerEmail}
                   phone={sag.customerPhone}
                 />
-                <CustomerSms caseId={sag.id} phone={sag.customerPhone} next={`/sager/${sag.id}`} />
+                <CustomerSms
+                  phone={sag.customerPhone}
+                  idag={customerSmsText("idag", {
+                    customerName: sag.customerName,
+                    company: companyName,
+                    worker: sag.assignedTo?.name || user.name,
+                    from: sag.scheduledStart ? formatTime(sag.scheduledStart) : undefined,
+                    to: sag.scheduledEnd ? formatTime(sag.scheduledEnd) : undefined,
+                  })}
+                  paaVej={customerSmsText("paa_vej", {
+                    customerName: sag.customerName,
+                    company: companyName,
+                    worker: sag.assignedTo?.name || user.name,
+                  })}
+                />
               </div>
               <p className="wo-aside-note">
                 Næste planlagte tid:{" "}

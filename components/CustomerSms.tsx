@@ -1,30 +1,36 @@
-import { sendCaseSmsAction } from "@/app/actions/sms";
-import { SubmitButton } from "@/components/SubmitButton";
+"use client";
+
+import { useEffect, useState } from "react";
+import { smsComposeHref } from "@/lib/sms";
+
+const linkClass =
+  "inline-flex items-center justify-center rounded-full border border-line bg-white px-4 py-2.5 text-sm font-semibold text-ink";
 
 export function CustomerSms({
-  caseId,
   phone,
-  next,
+  idag,
+  paaVej,
 }: {
-  caseId: string;
   phone: string;
-  next?: string;
+  idag: string;
+  paaVej: string;
 }) {
+  const [ios, setIos] = useState(false);
+  useEffect(() => {
+    setIos(/iPad|iPhone|iPod/.test(navigator.userAgent));
+  }, []);
   if (!phone.trim()) return null;
+  const todayHref = smsComposeHref(phone, idag, ios);
+  const wayHref = smsComposeHref(phone, paaVej, ios);
+  if (!todayHref || !wayHref) return null;
   return (
     <div className="mt-3 flex flex-wrap gap-2">
-      <form action={sendCaseSmsAction}>
-        <input type="hidden" name="caseId" value={caseId} />
-        <input type="hidden" name="kind" value="idag" />
-        {next ? <input type="hidden" name="next" value={next} /> : null}
-        <SubmitButton variant="secondary">I dag</SubmitButton>
-      </form>
-      <form action={sendCaseSmsAction}>
-        <input type="hidden" name="caseId" value={caseId} />
-        <input type="hidden" name="kind" value="paa_vej" />
-        {next ? <input type="hidden" name="next" value={next} /> : null}
-        <SubmitButton variant="secondary">På vej</SubmitButton>
-      </form>
+      <a className={linkClass} href={todayHref}>
+        I dag
+      </a>
+      <a className={linkClass} href={wayHref}>
+        På vej
+      </a>
     </div>
   );
 }

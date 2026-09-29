@@ -16,6 +16,11 @@ model User {
   role            String    @default("MEDARBEJDER")
   trade           String    @default("ANDET")
   phone           String    @default("")
+  homeStreet      String    @default("")
+  homePostal      String    @default("")
+  homeCity        String    @default("")
+  homeLat         Float?
+  homeLng         Float?
   hourlyRate      Int       @default(45000)
   wageRate        Int       @default(0)
   payType         String    @default("TIMER")
@@ -175,6 +180,8 @@ model Case {
   customerCity     String    @default("")
   customerPhone    String    @default("")
   customerEmail    String    @default("")
+  customerLat      Float?
+  customerLng      Float?
   insuranceCompany String    @default("")
   claimNumber      String    @default("")
   requisition      String    @default("")

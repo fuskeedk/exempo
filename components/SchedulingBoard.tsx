@@ -34,6 +34,7 @@ export type ScheduleJob = {
   absenceType?: AbsenceType;
   note?: string;
   status?: "PLANLAGT" | "REGISTRERET";
+  nearest?: string;
 };
 
 export type ScheduleEmployee = {
@@ -415,6 +416,7 @@ export function SchedulingBoard({
                                 ? ` ${job.customerPostal} ${job.customerCity}`.trim()
                                 : ""}
                             </p>
+                            {job.nearest ? <p>{job.nearest}</p> : null}
                           </div>
                         </article>
                       </li>

@@ -69,6 +69,50 @@ export function googleMapsSearchUrl(address: string) {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
 }
 
+export type LatLng = { lat: number; lng: number };
+
+export function distanceKm(a: LatLng, b: LatLng) {
+  const earth = 6371;
+  const dLat = ((b.lat - a.lat) * Math.PI) / 180;
+  const dLng = ((b.lng - a.lng) * Math.PI) / 180;
+  const lat1 = (a.lat * Math.PI) / 180;
+  const lat2 = (b.lat * Math.PI) / 180;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+  return 2 * earth * Math.asin(Math.min(1, Math.sqrt(h)));
+}
+
+export function formatKm(km: number) {
+  if (km < 10) return `${km.toFixed(1).replace(".", ",")} km`;
+  return `${Math.round(km)} km`;
+}
+
+export function closestHome<T extends LatLng & { name: string }>(point: LatLng, homes: T[]) {
+  let best: (T & { km: number }) | null = null;
+  for (const home of homes) {
+    const km = distanceKm(point, home);
+    if (!best || km < best.km) best = { ...home, km };
+  }
+  return best;
+}
+
+export async function geocodeDanishAddress(query: string, fetchImpl: typeof fetch = fetch): Promise<LatLng | null> {
+  const q = query.trim();
+  if (q.length < 3) return null;
+  const response = await fetchImpl(
+    `https://api.dataforsyningen.dk/adresser?q=${encodeURIComponent(q)}&per_side=1&srid=4326`,
+  );
+  if (!response.ok) return null;
+  const rows = (await response.json()) as Array<{
+    adgangsadresse?: { adgangspunkt?: { koordinater?: number[] } };
+  }>;
+  const point = rows[0]?.adgangsadresse?.adgangspunkt?.koordinater;
+  if (!point || point.length < 2) return null;
+  const lng = Number(point[0]);
+  const lat = Number(point[1]);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  return { lat, lng };
+}
+
 export function appleMapsUrl(address: string) {
   const q = address.trim();
   if (!q) return "";

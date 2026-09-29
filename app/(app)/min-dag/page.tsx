@@ -36,6 +36,7 @@ import {
 import { uniqueTimeEntries, uniqueTimesheetJobs } from "@/lib/timesheets";
 import { scheduledCaseWhere, calendarActivityWhere, registeredCaseDays, isPlannedCoveredByRegistered, isPlannedSlotCovered } from "@/lib/calendar-query";
 import { formatPlace } from "@/lib/geo";
+import { customerSmsText } from "@/lib/sms";
 import { buildCalendarDays } from "@/lib/holidays";
 import { prisma } from "@/lib/prisma";
 import { getSettings, productCatalogEnabled, vanStockEnabled } from "@/lib/settings";
@@ -369,7 +370,21 @@ export default async function MyDayPage({
                       <PhoneLink phone={job.customerPhone} className="text-pine hover:underline" />
                     </p>
                   ) : null}
-                  <CustomerSms caseId={job.id} phone={job.customerPhone} next="/min-dag" />
+                  <CustomerSms
+                    phone={job.customerPhone}
+                    idag={customerSmsText("idag", {
+                      customerName: job.customerName,
+                      company: settings.company_name,
+                      worker: worker?.name ?? user.name,
+                      from: job.scheduledStart ? formatTime(job.scheduledStart) : undefined,
+                      to: job.scheduledEnd ? formatTime(job.scheduledEnd) : undefined,
+                    })}
+                    paaVej={customerSmsText("paa_vej", {
+                      customerName: job.customerName,
+                      company: settings.company_name,
+                      worker: worker?.name ?? user.name,
+                    })}
+                  />
                   <MapButton address={formatPlace([job.customerAddress, job.customerCity])} />
                   {bookings.length > 0 ? (
                     <p className="mt-1 text-sm text-muted">

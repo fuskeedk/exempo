@@ -8,6 +8,13 @@ export function msisdn(phone: string): string | null {
   return null;
 }
 
+export function smsComposeHref(phone: string, body: string, ios = false) {
+  const recipient = msisdn(phone);
+  if (!recipient) return "";
+  const sep = ios ? "&" : "?";
+  return `sms:+${recipient}${sep}body=${encodeURIComponent(body)}`;
+}
+
 export function smsSender(name: string) {
   const cleaned = name.replace(/[^A-Za-z0-9ÆØÅæøå ]/g, "").trim();
   return (cleaned || "Exempo").slice(0, 11);

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { createEmployeeAction, updateEmployeeAction } from "@/app/actions/employees";
 import { SubmitButton } from "@/components/SubmitButton";
+import { AddressAutocomplete } from "@/components/AddressAutocomplete";
 import { Field, Input, Select } from "@/components/ui";
 import { EMPLOYEE_COLORS, ROLE_LABELS, ROLES, TRADE_LABELS, TRADES } from "@/lib/catalog";
 import { toDateInput } from "@/lib/dates";
@@ -25,6 +26,9 @@ export type EmployeeFormValues = {
   apprenticeStart: Date | null;
   managerId: string | null;
   color: string;
+  homeStreet: string;
+  homePostal: string;
+  homeCity: string;
 };
 
 export function EmployeeForm({
@@ -69,6 +73,15 @@ export function EmployeeForm({
       <Field label="Telefon">
         <Input name="phone" defaultValue={employee?.phone} />
       </Field>
+      <AddressAutocomplete
+        streetName="homeStreet"
+        postalName="homePostal"
+        cityName="homeCity"
+        defaultStreet={employee?.homeStreet}
+        defaultPostal={employee?.homePostal}
+        defaultCity={employee?.homeCity}
+        streetPlaceholder="Bopæl"
+      />
       <Field label="Medarbejdernr. (Danløn/Dataløn)">
         <Input name="employeeNumber" defaultValue={employee?.employeeNumber} />
       </Field>
