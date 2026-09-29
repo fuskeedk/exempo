@@ -236,8 +236,8 @@ export default async function PlanningPage({
       : [],
   );
   const missingPoints = active
-    .filter((sag) => !sag.assignedToId && sag.customerLat == null && sag.customerAddress.trim())
-    .slice(0, 12);
+    .filter((sag) => sag.customerLat == null && sag.customerAddress.trim())
+    .slice(0, 40);
   const filledPoints = await Promise.all(
     missingPoints.map(async (sag) => {
       const point = await geocodeDanishAddress(formatPlace([sag.customerAddress, sag.customerPostal, sag.customerCity]));
@@ -267,15 +267,18 @@ export default async function PlanningPage({
       color: home.color,
     })),
     ...locatedCases
-      .filter((sag) => !sag.assignedToId && sag.customerLat != null && sag.customerLng != null)
-      .slice(0, 40)
+      .filter((sag) => sag.customerLat != null && sag.customerLng != null)
       .map((sag) => ({
         id: sag.id,
         lat: sag.customerLat as number,
         lng: sag.customerLng as number,
-        label: `${sag.caseNumber} · ${sag.customerCity || sag.title}`,
+        label: sag.assignedTo
+          ? `${sag.caseNumber} · ${sag.assignedTo.name}`
+          : `${sag.caseNumber} · ${sag.customerCity || sag.title}`,
         kind: "opgave" as const,
-        color: "#c46b45",
+        color: sag.assignedToId
+          ? (employees.find((item) => item.id === sag.assignedToId)?.color ?? "#c46b45")
+          : "#c46b45",
       })),
   ];
 
