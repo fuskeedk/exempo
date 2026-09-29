@@ -237,7 +237,7 @@ export function MobileNav({
   }, [menuOpen, createOpen]);
 
   return (
-    <div className="contents lg:hidden">
+    <div className="app-chrome">
       <header className="app-top no-print z-40 shrink-0 overflow-visible border-b border-white/10 bg-pine text-[#f4efe4] pt-[env(safe-area-inset-top)]">
         <div className="flex h-14 items-center gap-3 overflow-visible px-3">
           <button

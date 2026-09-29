@@ -3390,6 +3390,10 @@ a {
 }
 
 @media (max-width: 1023px) {
+  .app-chrome {
+    display: contents;
+  }
+
   html:has(.app-shell),
   html:has(.app-shell) body {
     height: 100%;
@@ -3421,6 +3425,12 @@ a {
 
   .app-tabbar {
     order: 3;
+  }
+}
+
+@media (min-width: 1024px) {
+  .app-chrome {
+    display: none;
   }
 }
 
