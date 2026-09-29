@@ -228,16 +228,17 @@ export function MobileNav({
   }, [pathname]);
 
   useEffect(() => {
-    const prev = document.body.style.overflow;
-    if (menuOpen || createOpen) document.body.style.overflow = "hidden";
+    const scroller = document.querySelector(".app-scroll");
+    if (!(scroller instanceof HTMLElement)) return;
+    if (menuOpen || createOpen) scroller.style.overflow = "hidden";
     return () => {
-      document.body.style.overflow = prev;
+      scroller.style.overflow = "";
     };
   }, [menuOpen, createOpen]);
 
   return (
-    <div className="lg:hidden">
-      <header className="no-print fixed inset-x-0 top-0 z-40 overflow-visible border-b border-white/10 bg-pine text-[#f4efe4] pt-[env(safe-area-inset-top)]">
+    <div className="contents lg:hidden">
+      <header className="app-top no-print z-40 shrink-0 overflow-visible border-b border-white/10 bg-pine text-[#f4efe4] pt-[env(safe-area-inset-top)]">
         <div className="flex h-14 items-center gap-3 overflow-visible px-3">
           <button
             type="button"
@@ -391,7 +392,7 @@ export function MobileNav({
         </div>
       ) : null}
 
-      <nav className="no-print fixed inset-x-0 bottom-0 z-40 border-t border-line bg-paper-2 pb-[env(safe-area-inset-bottom)]">
+      <nav className="app-tabbar no-print z-40 shrink-0 border-t border-line bg-paper-2 pb-[env(safe-area-inset-bottom)]">
         <div
           className="grid"
           style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}

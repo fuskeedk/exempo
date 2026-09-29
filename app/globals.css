@@ -3384,3 +3384,52 @@ a {
   border: 1px solid #ddd;
   border-radius: 1rem;
 }
+
+.crew-map .crew-pin {
+  cursor: pointer;
+}
+
+@media (max-width: 1023px) {
+  html:has(.app-shell),
+  html:has(.app-shell) body {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .app-shell {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .app-top {
+    order: 1;
+  }
+
+  .app-shell > .app-scroll {
+    order: 2;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .app-tabbar {
+    order: 3;
+  }
+}
+
+@media print {
+  html:has(.app-shell),
+  html:has(.app-shell) body,
+  .app-shell,
+  .app-shell > .app-scroll {
+    height: auto !important;
+    overflow: visible !important;
+  }
+}

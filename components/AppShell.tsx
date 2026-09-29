@@ -60,7 +60,7 @@ export function AppShell({
     .filter((link) => link.href !== "/vognlager" || vanStock);
 
   return (
-    <div className="min-h-screen lg:grid lg:grid-cols-[260px_1fr]">
+    <div className="app-shell min-h-screen lg:grid lg:grid-cols-[260px_1fr]">
       <OnboardingTour
         autoStart={Boolean(showTour)}
         role={user.role}
@@ -121,8 +121,8 @@ export function AppShell({
         help={<TourHelpButton className="text-sm underline-offset-4 hover:underline" />}
         notify={<NotificationBell items={inbox} variant="header" />}
       />
-      <div className="min-h-screen">
-        <main className="px-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] pt-[calc(4.25rem+env(safe-area-inset-top))] sm:px-8 lg:px-8 lg:py-8 lg:pb-8 lg:pt-8">
+      <div className="app-scroll min-h-screen">
+        <main className="px-4 py-4 sm:px-8 lg:px-8 lg:py-8">
           <div className="wo-createbar wo-createbar-desktop no-print">
             <NotificationBell items={inbox} />
             {office ? <CreateMenu /> : null}

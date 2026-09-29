@@ -2,6 +2,7 @@
 
 import "leaflet/dist/leaflet.css";
 import { useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import type { LatLng } from "@/lib/geo";
 
 export type CrewMapPoint = LatLng & {
@@ -14,6 +15,7 @@ export type CrewMapPoint = LatLng & {
 export function CrewMap({ points }: { points: CrewMapPoint[] }) {
   const nodeRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<{ remove: () => void } | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     let cancelled = false;
@@ -31,15 +33,20 @@ export function CrewMap({ points }: { points: CrewMapPoint[] }) {
       }).addTo(map);
       const bounds: [number, number][] = [];
       for (const point of points) {
-        L.circleMarker([point.lat, point.lng], {
-          radius: point.kind === "hjem" ? 9 : 6,
+        const marker = L.circleMarker([point.lat, point.lng], {
+          radius: point.kind === "hjem" ? 9 : 8,
           color: "#16382c",
           weight: 1,
           fillColor: point.color,
           fillOpacity: 0.95,
-        })
-          .addTo(map)
-          .bindTooltip(point.label);
+          className: point.kind === "opgave" ? "crew-pin" : "",
+        }).addTo(map);
+        marker.bindTooltip(point.label);
+        if (point.kind === "opgave") {
+          marker.on("click", () => {
+            router.push(`/sager/${point.id}`);
+          });
+        }
         bounds.push([point.lat, point.lng]);
       }
       if (bounds.length === 0) map.setView([56.2, 10.6], 6);
@@ -51,7 +58,7 @@ export function CrewMap({ points }: { points: CrewMapPoint[] }) {
       mapRef.current?.remove();
       mapRef.current = null;
     };
-  }, [points]);
+  }, [points, router]);
 
   return <div ref={nodeRef} className="crew-map" />;
 }
