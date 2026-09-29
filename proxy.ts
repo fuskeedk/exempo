@@ -9,6 +9,7 @@ const OFFICE_PATHS = [
   "/rykkere",
   "/okonomi",
   "/medarbejdere",
+  "/teams",
   "/administration",
   "/kalender",
   "/indkob",

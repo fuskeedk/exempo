@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 const tabs = [
   { href: "/administration", label: "Overblik", match: (path: string) => path === "/administration" },
   { href: "/medarbejdere", label: "Medarbejdere", match: (path: string) => path.startsWith("/medarbejdere") },
+  { href: "/teams", label: "Teams", match: (path: string) => path.startsWith("/teams") },
   { href: "/lon", label: "Løn", match: (path: string) => path.startsWith("/lon") || path.startsWith("/overenskomster") },
   { href: "/okonomi", label: "Omsætning", match: (path: string) => path.startsWith("/okonomi") },
   { href: "/fakturaer", label: "Fakturaer", match: (path: string) => path.startsWith("/fakturaer") },
