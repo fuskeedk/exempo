@@ -113,6 +113,7 @@ export default async function CaseDetailPage({
       }))}
       catalogEnabled={catalogOn}
       vanEnabled={vanOn}
+      companyName={settings.company_name}
       plannedActivities={plannedActivities.map((activity) => ({
         id: activity.id,
         userId: activity.userId,

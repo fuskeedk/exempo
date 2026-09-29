@@ -10,6 +10,7 @@ import { parseKrToOre } from "@/lib/money";
 import { lookupLogin, registerLogin, unregisterLogin } from "@/lib/platform";
 import { tenantPrisma } from "@/lib/prisma";
 import { employeeStatusReason, isPayType } from "@/lib/employees";
+import { formatPlace, geocodeDanishAddress } from "@/lib/geo";
 
 function str(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
@@ -17,6 +18,20 @@ function str(formData: FormData, key: string) {
 
 function parseColor(value: string) {
   return /^#[0-9a-fA-F]{6}$/.test(value) ? value.toLowerCase() : EMPLOYEE_COLORS[0];
+}
+
+async function homeFields(formData: FormData) {
+  const homeStreet = str(formData, "homeStreet");
+  const homePostal = str(formData, "homePostal");
+  const homeCity = str(formData, "homeCity");
+  const point = await geocodeDanishAddress(formatPlace([homeStreet, homePostal, homeCity]));
+  return {
+    homeStreet,
+    homePostal,
+    homeCity,
+    homeLat: point?.lat ?? null,
+    homeLng: point?.lng ?? null,
+  };
 }
 
 function payrollFields(formData: FormData) {
@@ -74,6 +89,7 @@ export async function createEmployeeAction(formData: FormData) {
       role: isRole(role) ? role : "MEDARBEJDER",
       trade: isTrade(trade) ? trade : "ANDET",
       phone: str(formData, "phone"),
+      ...(await homeFields(formData)),
       hourlyRate: parseKrToOre(str(formData, "hourlyRate")) || 45000,
       color: parseColor(str(formData, "color")) || EMPLOYEE_COLORS[count % EMPLOYEE_COLORS.length],
       ...payrollFields(formData),
@@ -116,6 +132,7 @@ export async function updateEmployeeAction(formData: FormData) {
       role: isRole(role) ? role : user.role,
       trade: isTrade(trade) ? trade : user.trade,
       phone: str(formData, "phone"),
+      ...(await homeFields(formData)),
       hourlyRate: parseKrToOre(str(formData, "hourlyRate")) || user.hourlyRate,
       color: parseColor(str(formData, "color")),
       ...payrollFields(formData),

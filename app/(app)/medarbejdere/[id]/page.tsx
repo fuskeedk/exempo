@@ -59,6 +59,9 @@ export default async function EditEmployeePage({
             apprenticeStart: employee.apprenticeStart,
             managerId: employee.managerId,
             color: employee.color,
+            homeStreet: employee.homeStreet,
+            homePostal: employee.homePostal,
+            homeCity: employee.homeCity,
           }}
           agreements={agreements}
           managers={managers}

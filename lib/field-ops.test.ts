@@ -3,7 +3,8 @@ import assert from "node:assert/strict";
 import { bookInvoice } from "./bookkeeping";
 import { electricianSlutkontrolDone } from "./kls-catalog";
 import { payrollExportFilter } from "./payroll-export";
-import { customerSmsText, msisdn, smsSender } from "./sms";
+import { closestHome, distanceKm, formatKm, geocodeQueryVariants } from "./geo";
+import { customerSmsText, msisdn, smsComposeHref, smsSender } from "./sms";
 
 const invoice = {
   invoiceNumber: "FAK-1",
@@ -46,6 +47,32 @@ describe("SMS", () => {
       "Hej Mette. Bo er på vej. Syd El",
     );
     assert.equal(smsSender("Syd El A/S"), "Syd El AS");
+    assert.equal(
+      smsComposeHref("12 34 56 78", "Hej Mette"),
+      "sms:+4512345678?body=Hej%20Mette",
+    );
+    assert.equal(
+      smsComposeHref("12345678", "På vej", true),
+      "sms:+4512345678&body=P%C3%A5%20vej",
+    );
+  });
+});
+
+describe("afstand", () => {
+  it("picks the home closest to the job", () => {
+    const job = { lat: 55.676, lng: 12.568 };
+    const near = closestHome(job, [
+      { name: "Aarhus", lat: 56.15, lng: 10.2 },
+      { name: "København", lat: 55.68, lng: 12.57 },
+    ]);
+    assert.equal(near?.name, "København");
+    assert.ok((near?.km ?? 99) < 2);
+    assert.ok(distanceKm(job, { lat: 56.15, lng: 10.2 }) > 100);
+    assert.equal(formatKm(4.26), "4,3 km");
+    assert.equal(formatKm(18.2), "18 km");
+    assert.equal(geocodeQueryVariants("Vesterbro 14, st. tv, Aalborg")[0], "Vesterbro 14, Aalborg");
+    assert.equal(geocodeQueryVariants("Vesterbrogade 11A, 1. 10, 7100 Vejle")[0], "Vesterbrogade 11A, 7100 Vejle");
+    assert.equal(geocodeQueryVariants("Algade 5, 4000 Roskilde")[0], "Algade 5, 4000 Roskilde");
   });
 });
 

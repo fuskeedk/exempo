@@ -3373,3 +3373,14 @@ a {
     padding: 0;
   }
 }
+
+.crew-map-wrap {
+  margin: 0 0 1rem;
+}
+
+.crew-map {
+  height: 22rem;
+  overflow: hidden;
+  border: 1px solid #ddd;
+  border-radius: 1rem;
+}

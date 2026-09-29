@@ -1,5 +1,6 @@
 import { addDays } from "date-fns";
 import { bookResourceAction, createResourceAction } from "@/app/actions/resources";
+import { CrewMap } from "@/components/CrewMap";
 import { SchedulingBoard, type ScheduleJob } from "@/components/SchedulingBoard";
 import { SubmitButton } from "@/components/SubmitButton";
 import { Card, Field, Input, Select } from "@/components/ui";
@@ -18,6 +19,7 @@ import { buildCalendarDays } from "@/lib/holidays";
 import { prisma } from "@/lib/prisma";
 import { calendarActivityWhere, scheduledCaseWhere, registeredCaseDays, isPlannedCoveredByRegistered, isPlannedSlotCovered } from "@/lib/calendar-query";
 import { uniqueTimesheetJobs } from "@/lib/timesheets";
+import { closestHome, formatKm, formatPlace, geocodeDanishAddress } from "@/lib/geo";
 import { parseHourParam, parseScheduleView, schedulingDays } from "@/lib/scheduling";
 
 function toJob(
@@ -214,7 +216,68 @@ export default async function PlanningPage({
       status: activity.status === "REGISTRERET" ? ("REGISTRERET" as const) : ("PLANLAGT" as const),
     };
   });
-  const waiting = active.map((sag) => toJob(sag));
+  const locatedEmployees = await Promise.all(
+    employees.map(async (employee) => {
+      if (employee.homeLat != null && employee.homeLng != null) return employee;
+      const query = formatPlace([employee.homeStreet, employee.homePostal, employee.homeCity]);
+      if (!query) return employee;
+      const point = await geocodeDanishAddress(query);
+      if (!point) return employee;
+      await prisma.user.update({
+        where: { id: employee.id },
+        data: { homeLat: point.lat, homeLng: point.lng },
+      });
+      return { ...employee, homeLat: point.lat, homeLng: point.lng };
+    }),
+  );
+  const homes = locatedEmployees.flatMap((employee) =>
+    employee.homeLat != null && employee.homeLng != null
+      ? [{ id: employee.id, name: employee.name, lat: employee.homeLat, lng: employee.homeLng, color: employee.color }]
+      : [],
+  );
+  const missingPoints = active
+    .filter((sag) => !sag.assignedToId && sag.customerLat == null && sag.customerAddress.trim())
+    .slice(0, 12);
+  const filledPoints = await Promise.all(
+    missingPoints.map(async (sag) => {
+      const point = await geocodeDanishAddress(formatPlace([sag.customerAddress, sag.customerPostal, sag.customerCity]));
+      if (!point) return sag;
+      await prisma.case.update({
+        where: { id: sag.id },
+        data: { customerLat: point.lat, customerLng: point.lng },
+      });
+      return { ...sag, customerLat: point.lat, customerLng: point.lng };
+    }),
+  );
+  const pointById = new Map(filledPoints.map((sag) => [sag.id, sag]));
+  const locatedCases = active.map((sag) => pointById.get(sag.id) ?? sag);
+  const waiting = locatedCases.map((sag) => {
+    const job = toJob(sag);
+    if (sag.assignedToId || sag.customerLat == null || sag.customerLng == null || homes.length === 0) return job;
+    const near = closestHome({ lat: sag.customerLat, lng: sag.customerLng }, homes);
+    return near ? { ...job, nearest: `${near.name} · ${formatKm(near.km)}` } : job;
+  });
+  const mapPoints = [
+    ...homes.map((home) => ({
+      id: home.id,
+      lat: home.lat,
+      lng: home.lng,
+      label: home.name,
+      kind: "hjem" as const,
+      color: home.color,
+    })),
+    ...locatedCases
+      .filter((sag) => !sag.assignedToId && sag.customerLat != null && sag.customerLng != null)
+      .slice(0, 40)
+      .map((sag) => ({
+        id: sag.id,
+        lat: sag.customerLat as number,
+        lng: sag.customerLng as number,
+        label: `${sag.caseNumber} · ${sag.customerCity || sag.title}`,
+        kind: "opgave" as const,
+        color: "#c46b45",
+      })),
+  ];
 
   const shared = {
     vis: view === "arbejdsdag" ? undefined : view,
@@ -233,6 +296,11 @@ export default async function PlanningPage({
 
   return (
     <div className="sch-page">
+      {mapPoints.length > 0 ? (
+        <div className="crew-map-wrap">
+          <CrewMap points={mapPoints} />
+        </div>
+      ) : null}
       <SchedulingBoard
         days={calendarDays}
         jobs={uniqueTimesheetJobs([...jobs, ...activityJobs])}
