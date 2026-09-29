@@ -29,6 +29,7 @@ const adminLinks: MobileNavLink[] = [
   { href: "/fakturaer", label: "Fakturaer", icon: "invoice", tour: "nav-fakturaer" },
   { href: "/rykkere", label: "Rykkere", icon: "reminder" },
   { href: "/indkob", label: "Indkøb", icon: "purchase" },
+  { href: "/overflytning", label: "Overflytning", icon: "move" },
   { href: "/indstillinger", label: "Indstillinger", icon: "settings", tour: "nav-indstillinger" },
 ];
 

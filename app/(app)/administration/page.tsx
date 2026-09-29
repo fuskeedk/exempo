@@ -67,6 +67,12 @@ export default async function AdministrationPage() {
       hint: "Godkend timer og eksportér til Excel, Danløn eller Dataløn",
     },
     {
+      href: "/overflytning",
+      label: "Overflytning",
+      value: "Minuba",
+      hint: "Kunder, sager og varer fra Minuba, Ordrestyring eller Apacta",
+    },
+    {
       href: "/indstillinger",
       label: "Indstillinger",
       value: "Opsætning",
@@ -79,7 +85,7 @@ export default async function AdministrationPage() {
       <PageHeader
         kicker="Administration"
         title="Kontoret"
-        description="Medarbejdere, løn, omsætning, fakturaer, rykkere, indkøb og indstillinger."
+        description="Medarbejdere, løn, omsætning, fakturaer, rykkere, indkøb, overflytning og indstillinger."
       />
       <AdminTabs />
       <div className="grid gap-4 sm:grid-cols-2">
