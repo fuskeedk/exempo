@@ -23,6 +23,7 @@ const adminLinks = [
   { href: "/fakturaer", label: "Fakturaer", tour: "nav-fakturaer" },
   { href: "/rykkere", label: "Rykkere" },
   { href: "/indkob", label: "Indkøb" },
+  { href: "/overflytning", label: "Overflytning" },
   { href: "/indstillinger", label: "Indstillinger", tour: "nav-indstillinger" },
 ];
 
@@ -35,6 +36,7 @@ const adminPrefixes = [
   "/fakturaer",
   "/rykkere",
   "/indkob",
+  "/overflytning",
   "/indstillinger",
 ];
 

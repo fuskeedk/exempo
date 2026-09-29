@@ -139,6 +139,14 @@ const ICONS = {
       <path d="M4 5h2.2l1.4 10h11.2l2-7H7.2" />
     </>
   ),
+  move: (
+    <>
+      <path d="M4 7h10" />
+      <path d="M10 4l4 3-4 3" />
+      <path d="M20 17H10" />
+      <path d="M14 14l-4 3 4 3" />
+    </>
+  ),
   settings: (
     <>
       <circle cx="12" cy="12" r="3" />

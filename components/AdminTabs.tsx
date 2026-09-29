@@ -11,6 +11,7 @@ const tabs = [
   { href: "/fakturaer", label: "Fakturaer", match: (path: string) => path.startsWith("/fakturaer") },
   { href: "/rykkere", label: "Rykkere", match: (path: string) => path.startsWith("/rykkere") },
   { href: "/indkob", label: "Indkøb", match: (path: string) => path.startsWith("/indkob") },
+  { href: "/overflytning", label: "Overflytning", match: (path: string) => path.startsWith("/overflytning") },
   { href: "/indstillinger", label: "Indstillinger", match: (path: string) => path.startsWith("/indstillinger") },
 ];
 
